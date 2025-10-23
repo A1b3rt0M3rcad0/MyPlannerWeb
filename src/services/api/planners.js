@@ -1,10 +1,19 @@
-import api from '../../config/api';
+import api from "../../config/api";
 
 // Planners - Apenas admins podem acessar
 export const plannersApi = {
   // Listar todos os planners
-  getPlanners: async () => {
-    const response = await api.get('/planners');
+  getPlanners: async (page = 1, pageSize = 10, search = "") => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      page_size: pageSize.toString(),
+    });
+
+    if (search) {
+      params.append("search", search);
+    }
+
+    const response = await api.get(`/planners?${params}`);
     return response.data;
   },
 
@@ -16,7 +25,7 @@ export const plannersApi = {
 
   // Criar planner
   createPlanner: async (plannerData) => {
-    const response = await api.post('/planner/create', plannerData);
+    const response = await api.post("/planner/create", plannerData);
     return response.data;
   },
 
@@ -30,5 +39,5 @@ export const plannersApi = {
   deletePlanner: async (plannerId) => {
     const response = await api.delete(`/planner/${plannerId}`);
     return response.data;
-  }
+  },
 };
