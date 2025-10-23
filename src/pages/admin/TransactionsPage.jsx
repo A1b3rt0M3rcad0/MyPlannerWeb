@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Receipt,
   Plus,
@@ -24,64 +24,106 @@ export default function TransactionsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 10,
+    total: 0,
+  });
+
+  const loadTransactions = useCallback(
+    async (page = pagination.page, pageSize = pagination.pageSize) => {
+      try {
+        setLoading(true);
+        const response = await transactionsApi.getTransactions(
+          page,
+          pageSize,
+          searchTerm
+        );
+        setTransactions(response.transactions || []);
+        setPagination({
+          page: response.pagination?.page || page,
+          pageSize: response.pagination?.page_size || pageSize,
+          total: response.pagination?.total || 0,
+        });
+      } catch (error) {
+        console.error("Erro ao carregar transações:", error);
+        setError("Erro ao carregar transações");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [pagination.page, pagination.pageSize, searchTerm]
+  );
 
   useEffect(() => {
     loadTransactions();
   }, []);
 
-  const loadTransactions = async () => {
-    try {
-      setLoading(true);
-      const response = await transactionsApi.getTransactions();
-      setTransactions(response.data || []);
-    } catch (error) {
-      console.error("Erro ao carregar transações:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Debounce para busca
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      loadTransactions(1); // Reset para página 1 quando buscar
+    }, 300); // Debounce de 300ms
 
+    return () => clearTimeout(timeoutId);
+  }, [loadTransactions]);
+
+  // A filtragem agora é feita no backend
   const filteredTransactions = transactions.filter((transaction) => {
-    const matchesSearch = transaction.description
-      ?.toLowerCase()
-      .includes(searchTerm.toLowerCase());
     const matchesFilter =
       filterType === "all" ||
       (filterType === "income" && transaction.is_income) ||
       (filterType === "expense" && !transaction.is_income);
 
-    return matchesSearch && matchesFilter;
+    return matchesFilter;
   });
 
   const handleDeleteTransaction = async (transactionId) => {
     if (window.confirm("Tem certeza que deseja deletar esta transação?")) {
       try {
+        setError(null);
+        setSuccess(null);
         await transactionsApi.deleteTransaction(transactionId);
-        loadTransactions();
+        setSuccess("Transação deletada com sucesso!");
+        loadTransactions(pagination.page);
+        setTimeout(() => setSuccess(null), 3000);
       } catch (error) {
         console.error("Erro ao deletar transação:", error);
+        setError(error.response?.data?.message || "Erro ao deletar transação");
       }
     }
   };
 
   const handleCreateTransaction = async (transactionData) => {
     try {
+      setError(null);
+      setSuccess(null);
       await transactionsApi.createTransaction(transactionData);
+      setSuccess("Transação criada com sucesso!");
       setShowCreateModal(false);
-      loadTransactions();
+      loadTransactions(1);
+      setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
       console.error("Erro ao criar transação:", error);
+      setError(error.response?.data?.message || "Erro ao criar transação");
     }
   };
 
   const handleUpdateTransaction = async (transactionId, transactionData) => {
     try {
+      setError(null);
+      setSuccess(null);
       await transactionsApi.updateTransaction(transactionId, transactionData);
+      setSuccess("Transação atualizada com sucesso!");
       setShowEditModal(false);
       setSelectedTransaction(null);
-      loadTransactions();
+      loadTransactions(pagination.page);
+      setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
       console.error("Erro ao atualizar transação:", error);
+      setError(error.response?.data?.message || "Erro ao atualizar transação");
     }
   };
 
@@ -112,13 +154,52 @@ export default function TransactionsPage() {
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Plus size={20} />
             Nova Transação
           </button>
         </div>
       </div>
+
+      {/* Mensagens de feedback */}
+      {error && (
+        <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="text-red-600">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {success && (
+        <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="text-green-600">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-green-700">{success}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="mb-6 bg-white rounded-lg shadow-sm border p-4">
@@ -133,7 +214,7 @@ export default function TransactionsPage() {
               placeholder="Buscar transações..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -141,7 +222,7 @@ export default function TransactionsPage() {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="all">Todas</option>
               <option value="income">Receitas</option>
@@ -155,7 +236,7 @@ export default function TransactionsPage() {
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
         {loading ? (
           <div className="p-8 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-2 text-gray-600">Carregando transações...</p>
           </div>
         ) : filteredTransactions.length === 0 ? (
@@ -272,7 +353,7 @@ export default function TransactionsPage() {
                             setSelectedTransaction(transaction);
                             setShowEditModal(true);
                           }}
-                          className="text-primary-600 hover:text-primary-900 p-1"
+                          className="text-blue-600 hover:text-blue-900 p-1"
                           title="Editar"
                         >
                           <Edit size={16} />
@@ -295,6 +376,67 @@ export default function TransactionsPage() {
           </div>
         )}
       </div>
+
+      {/* Paginação */}
+      {filteredTransactions.length > 0 && (
+        <div className="mt-6 bg-white rounded-lg shadow-sm border p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center text-sm text-gray-700">
+              <span>
+                Mostrando {(pagination.page - 1) * pagination.pageSize + 1} a{" "}
+                {Math.min(
+                  pagination.page * pagination.pageSize,
+                  pagination.total
+                )}{" "}
+                de {pagination.total} transações
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-700">Itens por página:</span>
+              <select
+                value={pagination.pageSize}
+                onChange={(e) => {
+                  const newPageSize = parseInt(e.target.value);
+                  loadTransactions(1, newPageSize);
+                }}
+                className="border border-gray-300 rounded px-2 py-1 text-sm"
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => loadTransactions(pagination.page - 1)}
+                disabled={pagination.page <= 1}
+                className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Anterior
+              </button>
+
+              <span className="text-sm text-gray-700">
+                Página {pagination.page} de{" "}
+                {Math.ceil(pagination.total / pagination.pageSize)}
+              </span>
+
+              <button
+                onClick={() => loadTransactions(pagination.page + 1)}
+                disabled={
+                  pagination.page >=
+                  Math.ceil(pagination.total / pagination.pageSize)
+                }
+                className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Próximo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modais */}
       {showCreateModal && (
@@ -358,7 +500,7 @@ function CreateTransactionModal({ onClose, onSubmit }) {
               onChange={(e) =>
                 setFormData({ ...formData, planner_id: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -372,7 +514,7 @@ function CreateTransactionModal({ onClose, onSubmit }) {
               onChange={(e) =>
                 setFormData({ ...formData, account_id: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -386,7 +528,7 @@ function CreateTransactionModal({ onClose, onSubmit }) {
               onChange={(e) =>
                 setFormData({ ...formData, category_id: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -402,7 +544,7 @@ function CreateTransactionModal({ onClose, onSubmit }) {
               onChange={(e) =>
                 setFormData({ ...formData, amount: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -415,7 +557,7 @@ function CreateTransactionModal({ onClose, onSubmit }) {
                 setFormData({ ...formData, description: e.target.value })
               }
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div className="flex items-center">
@@ -442,7 +584,7 @@ function CreateTransactionModal({ onClose, onSubmit }) {
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Criar Transação
             </button>
@@ -491,7 +633,7 @@ function EditTransactionModal({ transaction, onClose, onSubmit }) {
               onChange={(e) =>
                 setFormData({ ...formData, planner_id: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -505,7 +647,7 @@ function EditTransactionModal({ transaction, onClose, onSubmit }) {
               onChange={(e) =>
                 setFormData({ ...formData, account_id: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -519,7 +661,7 @@ function EditTransactionModal({ transaction, onClose, onSubmit }) {
               onChange={(e) =>
                 setFormData({ ...formData, category_id: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -535,7 +677,7 @@ function EditTransactionModal({ transaction, onClose, onSubmit }) {
               onChange={(e) =>
                 setFormData({ ...formData, amount: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -548,7 +690,7 @@ function EditTransactionModal({ transaction, onClose, onSubmit }) {
                 setFormData({ ...formData, description: e.target.value })
               }
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div className="flex items-center">
@@ -575,7 +717,7 @@ function EditTransactionModal({ transaction, onClose, onSubmit }) {
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Salvar Alterações
             </button>
