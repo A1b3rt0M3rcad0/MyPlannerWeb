@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlanner } from "../../hooks/usePlanner.jsx";
-import { Plus, Users, Calendar, DollarSign, ArrowRight } from "lucide-react";
+import { Plus, Users, Calendar, DollarSign, ArrowRight, Search, FolderOpen, Sparkles } from "lucide-react";
 
 export default function PlannerSelectionPage() {
   const navigate = useNavigate();
@@ -39,29 +39,23 @@ export default function PlannerSelectionPage() {
       planner.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  };
-
   const getPlannerIcon = (color) => {
-    // Retorna ícone baseado na cor
     return <DollarSign className="w-6 h-6" />;
   };
 
   const getPlannerTypeLabel = (color) => {
-    // Retorna label baseado na cor
     return "Planner";
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando planners...</p>
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-white border-t-transparent"></div>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Carregando planners...</h3>
+          <p className="text-gray-600">Aguarde um momento</p>
         </div>
       </div>
     );
@@ -69,11 +63,11 @@ export default function PlannerSelectionPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center max-w-md">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-20 h-20 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
             <svg
-              className="w-8 h-8 text-red-600"
+              className="w-10 h-10 text-red-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -86,13 +80,11 @@ export default function PlannerSelectionPage() {
               />
             </svg>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Erro ao carregar planners
-          </h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Erro ao carregar planners</h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
+            className="px-6 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-2xl hover:from-red-600 hover:to-pink-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
           >
             Tentar novamente
           </button>
@@ -102,22 +94,25 @@ export default function PlannerSelectionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      {/* Header com gradiente */}
+      <div className="bg-white/80 backdrop-blur-md border-b border-white/20 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
                 <span className="text-white font-bold text-sm">FP</span>
               </div>
-              <h1 className="text-xl font-semibold text-gray-800">
-                FinPlanner V2
-              </h1>
+              <div>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                  FinPlanner V2
+                </h1>
+                <p className="text-sm text-gray-500">Selecione seu planner</p>
+              </div>
             </div>
             <button
               onClick={() => navigate("/")}
-              className="text-gray-600 hover:text-gray-800"
+              className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100/80 rounded-xl transition-all duration-200"
             >
               Sair
             </button>
@@ -126,130 +121,130 @@ export default function PlannerSelectionPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Título e busca */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Selecione um Planner
-          </h2>
-          <p className="text-gray-600 mb-6">
-            Escolha o planner que deseja acessar ou crie um novo
-          </p>
-
-          <div className="relative max-w-md">
-            <input
-              type="text"
-              placeholder="Buscar planners..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            />
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg
-                className="h-5 w-5 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* Grid de planners */}
-        {filteredPlanners.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-8 h-8 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {searchTerm
-                ? "Nenhum planner encontrado"
-                : "Nenhum planner criado"}
-            </h3>
-            <p className="text-gray-600 mb-6">
-              {searchTerm
-                ? "Tente ajustar sua busca ou criar um novo planner"
-                : "Crie seu primeiro planner para começar a organizar suas finanças"}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {filteredPlanners.map((planner) => (
-              <div
-                key={planner.id}
-                onClick={() => handleSelectPlanner(planner)}
-                className="bg-white rounded-xl p-6 border border-gray-200 hover:border-primary-300 hover:shadow-lg transition-all duration-200 cursor-pointer group"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-12 h-12 rounded-lg flex items-center justify-center text-white"
-                      style={{ backgroundColor: planner.color }}
-                    >
-                      {getPlannerIcon(planner.color)}
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
-                        {planner.name || "Sem nome"}
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        {getPlannerTypeLabel(planner.color)}
-                      </p>
-                    </div>
-                  </div>
-                  <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors" />
-                </div>
-
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                  {planner.description}
-                </p>
-
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Criado em:</span>
-                    <span className="font-semibold text-gray-900">
-                      {new Date(planner.created_at).toLocaleDateString("pt-BR")}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">ID:</span>
-                    <span className="font-semibold text-gray-900">
-                      #{planner.id}
-                    </span>
-                  </div>
-                </div>
+        {/* Card principal com glassmorphism */}
+        <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden mb-8">
+          {/* Header do card */}
+          <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 px-8 py-6 border-b border-gray-100/50">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <FolderOpen className="w-6 h-6 text-white" />
               </div>
-            ))}
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                  Meus Planners
+                </h2>
+                <p className="text-gray-600">
+                  Escolha um planner para acessar ou crie um novo
+                </p>
+              </div>
+            </div>
           </div>
-        )}
 
-        {/* Botão criar novo planner */}
-        <div className="text-center">
-          <button
-            onClick={handleCreatePlanner}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors font-medium"
-          >
-            <Plus className="w-5 h-5" />
-            Criar Novo Planner
-          </button>
+          <div className="p-8">
+            {/* Busca */}
+            <div className="mb-8">
+              <div className="relative max-w-md">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Buscar planners..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-gray-900 placeholder-gray-400"
+                />
+              </div>
+            </div>
+
+            {/* Grid de planners */}
+            {filteredPlanners.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                  <FolderOpen className="w-10 h-10 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  {searchTerm ? "Nenhum planner encontrado" : "Nenhum planner criado"}
+                </h3>
+                <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                  {searchTerm
+                    ? "Tente ajustar sua busca ou criar um novo planner"
+                    : "Crie seu primeiro planner para começar a organizar suas finanças"}
+                </p>
+                {!searchTerm && (
+                  <button
+                    onClick={handleCreatePlanner}
+                    className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-2xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span>Criar Primeiro Planner</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                {filteredPlanners.map((planner) => (
+                  <div
+                    key={planner.id}
+                    onClick={() => handleSelectPlanner(planner)}
+                    className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 hover:border-blue-300/50 hover:shadow-xl transition-all duration-300 cursor-pointer group transform hover:-translate-y-1"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg"
+                          style={{ backgroundColor: planner.color }}
+                        >
+                          {getPlannerIcon(planner.color)}
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                            {planner.name || "Sem nome"}
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            {getPlannerTypeLabel(planner.color)}
+                          </p>
+                        </div>
+                      </div>
+                      <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                    </div>
+
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                      {planner.description}
+                    </p>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Criado em:</span>
+                        <span className="font-semibold text-gray-900">
+                          {new Date(planner.created_at).toLocaleDateString("pt-BR")}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">ID:</span>
+                        <span className="font-semibold text-gray-900">
+                          #{planner.id}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Botão criar novo planner */}
+            {filteredPlanners.length > 0 && (
+              <div className="text-center">
+                <button
+                  onClick={handleCreatePlanner}
+                  className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-2xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                >
+                  <Plus className="w-5 h-5" />
+                  <span>Criar Novo Planner</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
