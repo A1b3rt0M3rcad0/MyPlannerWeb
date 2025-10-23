@@ -197,9 +197,22 @@ export function AuthProvider({ children }) {
       logout();
     };
 
+    const handleTokenUpdate = (event) => {
+      console.log("🔄 Evento de atualização de token detectado");
+      const { newAccessToken } = event.detail;
+      if (newAccessToken) {
+        updateAccessToken(newAccessToken);
+      }
+    };
+
     window.addEventListener("auth-error", handleAuthError);
-    return () => window.removeEventListener("auth-error", handleAuthError);
-  }, [logout]);
+    window.addEventListener("token-updated", handleTokenUpdate);
+    
+    return () => {
+      window.removeEventListener("auth-error", handleAuthError);
+      window.removeEventListener("token-updated", handleTokenUpdate);
+    };
+  }, [logout, updateAccessToken]);
 
   // Debug: Log do estado quando muda
   useEffect(() => {

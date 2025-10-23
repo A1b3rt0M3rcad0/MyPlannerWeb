@@ -3,8 +3,17 @@ import api from '../../config/api';
 // Contas - Apenas admins podem acessar
 export const accountsApi = {
   // Listar todas as contas
-  getAccounts: async () => {
-    const response = await api.get('/accounts');
+  getAccounts: async (page = 1, pageSize = 10, search = "") => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      page_size: pageSize.toString(),
+    });
+
+    if (search) {
+      params.append("search", search);
+    }
+
+    const response = await api.get(`/accounts?${params}`);
     return response.data;
   },
 

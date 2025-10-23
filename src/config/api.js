@@ -23,9 +23,15 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
 
-    // Adiciona refresh_token no body se disponível (para auto-refresh)
-    if (refreshToken && config.data && typeof config.data === 'object') {
-      config.data.refresh_token = refreshToken;
+    // Adiciona refresh_token em TODAS as requisições (sempre no body para segurança)
+    if (refreshToken) {
+      // Para todas as requisições, adiciona no body (mais seguro que query params)
+      if (config.data && typeof config.data === "object") {
+        config.data.refresh_token = refreshToken;
+      } else {
+        // Para requisições sem body (como GET), cria um body com o refresh_token
+        config.data = { refresh_token: refreshToken };
+      }
     }
 
     return config;
@@ -39,10 +45,17 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => {
     // Verifica se há um novo access_token no header
-    const newAccessToken = response.headers['x-new-access-token'];
+    const newAccessToken = response.headers["x-new-access-token"];
     if (newAccessToken) {
       console.log("🔄 Novo access_token recebido, atualizando...");
       localStorage.setItem("finplanner_v2_access_token", newAccessToken);
+
+      // Dispara evento para notificar o AuthContext sobre a atualização do token
+      window.dispatchEvent(
+        new CustomEvent("token-updated", {
+          detail: { newAccessToken },
+        })
+      );
     }
 
     return response;
