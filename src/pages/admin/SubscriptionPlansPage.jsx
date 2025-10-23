@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   CreditCard,
   Plus,
@@ -22,22 +22,35 @@ export default function SubscriptionPlansPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 10,
+    total: 0,
+  });
 
   useEffect(() => {
     loadPlans();
   }, []);
 
-  const loadPlans = async () => {
+  const loadPlans = useCallback(async () => {
     try {
       setLoading(true);
       const response = await subscriptionPlansApi.getPlans();
-      setPlans(response.data || []);
+      setPlans(response.subscription_plans || []);
+      setPagination({
+        page: response.pagination?.page || 1,
+        pageSize: response.pagination?.page_size || 10,
+        total: response.pagination?.total || 0,
+      });
     } catch (error) {
       console.error("Erro ao carregar planos:", error);
+      setError("Erro ao carregar planos");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const filteredPlans = plans.filter(
     (plan) =>
@@ -49,32 +62,47 @@ export default function SubscriptionPlansPage() {
   const handleDeletePlan = async (planId) => {
     if (window.confirm("Tem certeza que deseja deletar este plano?")) {
       try {
+        setError(null);
+        setSuccess(null);
         await subscriptionPlansApi.deletePlan(planId);
+        setSuccess("Plano deletado com sucesso!");
         loadPlans();
+        setTimeout(() => setSuccess(null), 3000);
       } catch (error) {
         console.error("Erro ao deletar plano:", error);
+        setError(error.response?.data?.message || "Erro ao deletar plano");
       }
     }
   };
 
   const handleCreatePlan = async (planData) => {
     try {
+      setError(null);
+      setSuccess(null);
       await subscriptionPlansApi.createPlan(planData);
+      setSuccess("Plano criado com sucesso!");
       setShowCreateModal(false);
       loadPlans();
+      setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
       console.error("Erro ao criar plano:", error);
+      setError(error.response?.data?.message || "Erro ao criar plano");
     }
   };
 
   const handleUpdatePlan = async (planId, planData) => {
     try {
+      setError(null);
+      setSuccess(null);
       await subscriptionPlansApi.updatePlan(planId, planData);
+      setSuccess("Plano atualizado com sucesso!");
       setShowEditModal(false);
       setSelectedPlan(null);
       loadPlans();
+      setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
       console.error("Erro ao atualizar plano:", error);
+      setError(error.response?.data?.message || "Erro ao atualizar plano");
     }
   };
 
@@ -111,13 +139,52 @@ export default function SubscriptionPlansPage() {
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Plus size={20} />
             Novo Plano
           </button>
         </div>
       </div>
+
+      {/* Mensagens de feedback */}
+      {error && (
+        <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="text-red-600">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {success && (
+        <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="text-green-600">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-green-700">{success}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="mb-6 bg-white rounded-lg shadow-sm border p-4">
@@ -132,7 +199,7 @@ export default function SubscriptionPlansPage() {
               placeholder="Buscar planos..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -142,7 +209,7 @@ export default function SubscriptionPlansPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (
           <div className="col-span-full flex justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
         ) : filteredPlans.length === 0 ? (
           <div className="col-span-full text-center p-8">
@@ -232,7 +299,7 @@ export default function SubscriptionPlansPage() {
                     Duração
                   </span>
                   <span className="font-medium text-gray-700">
-                    {formatDuration(plan.duration)}
+                    {formatDuration(plan.duration || 30)}
                   </span>
                 </div>
               </div>
@@ -243,7 +310,7 @@ export default function SubscriptionPlansPage() {
                     setSelectedPlan(plan);
                     setShowEditModal(true);
                   }}
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
                 >
                   <Edit size={16} />
                   Editar
@@ -294,14 +361,49 @@ function CreatePlanModal({ onClose, onSubmit }) {
     duration: "",
     is_active: true,
   });
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
-  const handleSubmit = (e) => {
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = "Nome é obrigatório";
+    }
+
+    if (!formData.description.trim()) {
+      newErrors.description = "Descrição é obrigatória";
+    }
+
+    if (!formData.price || parseFloat(formData.price) < 0) {
+      newErrors.price = "Preço deve ser maior ou igual a 0";
+    }
+
+    if (!formData.duration || parseInt(formData.duration) < 1) {
+      newErrors.duration = "Duração deve ser maior que 0";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit({
-      ...formData,
-      price: parseFloat(formData.price),
-      duration: parseInt(formData.duration),
-    });
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await onSubmit({
+        ...formData,
+        price: parseFloat(formData.price),
+        duration: parseInt(formData.duration),
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -320,7 +422,7 @@ function CreatePlanModal({ onClose, onSubmit }) {
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -334,7 +436,7 @@ function CreatePlanModal({ onClose, onSubmit }) {
                 setFormData({ ...formData, description: e.target.value })
               }
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -350,7 +452,7 @@ function CreatePlanModal({ onClose, onSubmit }) {
               onChange={(e) =>
                 setFormData({ ...formData, price: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -362,7 +464,7 @@ function CreatePlanModal({ onClose, onSubmit }) {
               onChange={(e) =>
                 setFormData({ ...formData, billing_cycle: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="monthly">Mensal</option>
               <option value="yearly">Anual</option>
@@ -377,7 +479,7 @@ function CreatePlanModal({ onClose, onSubmit }) {
               onChange={(e) =>
                 setFormData({ ...formData, plan_type: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="trial">Trial</option>
               <option value="premium">Premium</option>
@@ -395,7 +497,7 @@ function CreatePlanModal({ onClose, onSubmit }) {
               onChange={(e) =>
                 setFormData({ ...formData, duration: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div className="flex items-center">
@@ -422,9 +524,36 @@ function CreatePlanModal({ onClose, onSubmit }) {
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              disabled={loading}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              Criar Plano
+              {loading ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Criando...
+                </>
+              ) : (
+                "Criar Plano"
+              )}
             </button>
           </div>
         </form>
@@ -444,14 +573,49 @@ function EditPlanModal({ plan, onClose, onSubmit }) {
     duration: plan.duration || "",
     is_active: plan.is_active ?? true,
   });
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
-  const handleSubmit = (e) => {
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = "Nome é obrigatório";
+    }
+
+    if (!formData.description.trim()) {
+      newErrors.description = "Descrição é obrigatória";
+    }
+
+    if (!formData.price || parseFloat(formData.price) < 0) {
+      newErrors.price = "Preço deve ser maior ou igual a 0";
+    }
+
+    if (!formData.duration || parseInt(formData.duration) < 1) {
+      newErrors.duration = "Duração deve ser maior que 0";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit({
-      ...formData,
-      price: parseFloat(formData.price),
-      duration: parseInt(formData.duration),
-    });
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await onSubmit({
+        ...formData,
+        price: parseFloat(formData.price),
+        duration: parseInt(formData.duration),
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -470,7 +634,7 @@ function EditPlanModal({ plan, onClose, onSubmit }) {
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -484,7 +648,7 @@ function EditPlanModal({ plan, onClose, onSubmit }) {
                 setFormData({ ...formData, description: e.target.value })
               }
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -500,7 +664,7 @@ function EditPlanModal({ plan, onClose, onSubmit }) {
               onChange={(e) =>
                 setFormData({ ...formData, price: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -512,7 +676,7 @@ function EditPlanModal({ plan, onClose, onSubmit }) {
               onChange={(e) =>
                 setFormData({ ...formData, billing_cycle: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="monthly">Mensal</option>
               <option value="yearly">Anual</option>
@@ -527,7 +691,7 @@ function EditPlanModal({ plan, onClose, onSubmit }) {
               onChange={(e) =>
                 setFormData({ ...formData, plan_type: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="trial">Trial</option>
               <option value="premium">Premium</option>
@@ -545,7 +709,7 @@ function EditPlanModal({ plan, onClose, onSubmit }) {
               onChange={(e) =>
                 setFormData({ ...formData, duration: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div className="flex items-center">
@@ -572,9 +736,36 @@ function EditPlanModal({ plan, onClose, onSubmit }) {
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              disabled={loading}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              Salvar Alterações
+              {loading ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Salvando...
+                </>
+              ) : (
+                "Salvar Alterações"
+              )}
             </button>
           </div>
         </form>
