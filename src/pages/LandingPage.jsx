@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { ROUTES } from "../config/constants";
 import { 
   ArrowRight, 
   Shield,
@@ -474,16 +475,16 @@ export default function LandingPage() {
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => navigate("/login")}
-                      className={`w-full py-3 rounded-lg font-semibold transition-all ${
-                        isHighlighted
-                          ? "bg-secondary-900 text-white hover:bg-secondary-800"
-                          : "bg-gradient-to-r from-primary-500 to-primary-600 text-secondary-900 hover:from-primary-600 hover:to-primary-700 shadow-lg"
-                      }`}
-                    >
-                      Começar Agora
-                    </button>
+                      <button
+                        onClick={() => navigate(ROUTES.LOGIN)}
+                        className={`w-full py-3 rounded-lg font-semibold transition-all ${
+                          isHighlighted
+                            ? "bg-secondary-900 text-white hover:bg-secondary-800"
+                            : "bg-gradient-to-r from-primary-500 to-primary-600 text-secondary-900 hover:from-primary-600 hover:to-primary-700 shadow-lg"
+                        }`}
+                      >
+                        Começar Agora
+                      </button>
                   </div>
                 );
               })}
