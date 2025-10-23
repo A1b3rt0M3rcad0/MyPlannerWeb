@@ -1,43 +1,76 @@
 import api from "../../config/api";
 
-// Planners - Apenas admins podem acessar
-export const plannersApi = {
-  // Listar todos os planners
-  getPlanners: async (page = 1, pageSize = 10, search = "") => {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      page_size: pageSize.toString(),
-    });
+const PLANNERS_ENDPOINTS = {
+  LIST_USER_PLANNERS: "/my/planners",
+  GET_USER_PLANNER: "/my/planner",
+  CREATE_USER_PLANNER: "/my/planner/create",
+  UPDATE_USER_PLANNER: "/my/planner",
+  DELETE_USER_PLANNER: "/my/planner",
+};
 
-    if (search) {
-      params.append("search", search);
+export const plannersAPI = {
+  // Lista todos os planners do usuário autenticado
+  async listUserPlanners() {
+    try {
+      const response = await api.get(PLANNERS_ENDPOINTS.LIST_USER_PLANNERS);
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao listar planners:", error);
+      throw error;
     }
-
-    const response = await api.get(`/planners?${params}`);
-    return response.data;
   },
 
-  // Buscar planner por ID
-  getPlannerById: async (plannerId) => {
-    const response = await api.get(`/planner/${plannerId}`);
-    return response.data;
+  // Busca um planner específico do usuário
+  async getUserPlanner(plannerId) {
+    try {
+      const response = await api.get(
+        `${PLANNERS_ENDPOINTS.GET_USER_PLANNER}/${plannerId}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao buscar planner:", error);
+      throw error;
+    }
   },
 
-  // Criar planner
-  createPlanner: async (plannerData) => {
-    const response = await api.post("/planner/create", plannerData);
-    return response.data;
+  // Cria um novo planner
+  async createUserPlanner(plannerData) {
+    try {
+      const response = await api.post(
+        PLANNERS_ENDPOINTS.CREATE_USER_PLANNER,
+        plannerData
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao criar planner:", error);
+      throw error;
+    }
   },
 
-  // Atualizar planner
-  updatePlanner: async (plannerId, plannerData) => {
-    const response = await api.put(`/planner/${plannerId}`, plannerData);
-    return response.data;
+  // Atualiza um planner existente
+  async updateUserPlanner(plannerId, plannerData) {
+    try {
+      const response = await api.put(
+        `${PLANNERS_ENDPOINTS.UPDATE_USER_PLANNER}/${plannerId}`,
+        plannerData
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao atualizar planner:", error);
+      throw error;
+    }
   },
 
-  // Deletar planner
-  deletePlanner: async (plannerId) => {
-    const response = await api.delete(`/planner/${plannerId}`);
-    return response.data;
+  // Deleta um planner
+  async deleteUserPlanner(plannerId) {
+    try {
+      const response = await api.delete(
+        `${PLANNERS_ENDPOINTS.DELETE_USER_PLANNER}/${plannerId}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao deletar planner:", error);
+      throw error;
+    }
   },
 };

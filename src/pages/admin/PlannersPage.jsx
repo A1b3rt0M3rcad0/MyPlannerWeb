@@ -11,7 +11,7 @@ import {
   Palette,
   FileText,
 } from "lucide-react";
-import { plannersApi } from "../../services/api/planners";
+import { plannersAPI } from "../../services/api/planners";
 
 export default function PlannersPage() {
   const [planners, setPlanners] = useState([]);
@@ -32,7 +32,7 @@ export default function PlannersPage() {
     async (page = pagination.page, pageSize = pagination.pageSize) => {
       try {
         setLoading(true);
-        const response = await plannersApi.getPlanners(
+        const response = await plannersAPI.listUserPlanners(
           page,
           pageSize,
           searchTerm
@@ -74,7 +74,7 @@ export default function PlannersPage() {
       try {
         setError(null);
         setSuccess(null);
-        await plannersApi.deletePlanner(plannerId);
+        await plannersAPI.deleteUserPlanner(plannerId);
         setSuccess("Planner deletado com sucesso!");
         loadPlanners(pagination.page);
         setTimeout(() => setSuccess(null), 3000);
@@ -89,7 +89,7 @@ export default function PlannersPage() {
     try {
       setError(null);
       setSuccess(null);
-      await plannersApi.createPlanner(plannerData);
+      await plannersAPI.createUserPlanner(plannerData);
       setSuccess("Planner criado com sucesso!");
       setShowCreateModal(false);
       loadPlanners(1);
@@ -104,7 +104,7 @@ export default function PlannersPage() {
     try {
       setError(null);
       setSuccess(null);
-      await plannersApi.updatePlanner(plannerId, plannerData);
+      await plannersAPI.updateUserPlanner(plannerId, plannerData);
       setSuccess("Planner atualizado com sucesso!");
       setShowEditModal(false);
       setSelectedPlanner(null);

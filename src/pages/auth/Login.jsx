@@ -29,8 +29,8 @@ const Login = () => {
         );
         navigate("/admin", { replace: true });
       } else {
-        console.log("✅ Usuário já autenticado, redirecionando para dashboard");
-        navigate("/dashboard", { replace: true });
+        console.log("✅ Usuário já autenticado, redirecionando para seleção de planner");
+        navigate("/planner/selection", { replace: true });
       }
     }
   }, [isAuthenticated, user, authLoading, navigate]);
@@ -86,8 +86,8 @@ const Login = () => {
           console.log("🔄 Redirecionando para dashboard administrativo");
           navigate(ROUTES.ADMIN_DASHBOARD);
         } else {
-          console.log("🔄 Redirecionando para dashboard de usuário");
-          navigate(ROUTES.DASHBOARD);
+          console.log("🔄 Redirecionando para seleção de planner");
+          navigate("/planner/selection");
         }
       }
     } catch (err) {

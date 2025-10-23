@@ -1,14 +1,14 @@
-import { 
-  Home, 
-  DollarSign, 
-  PieChart, 
-  CreditCard, 
-  TrendingUp, 
-  FileText, 
+import {
+  Home,
+  DollarSign,
+  PieChart,
+  CreditCard,
+  TrendingUp,
+  FileText,
   Settings,
   BarChart3,
   Wallet,
-  Target
+  Target,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -33,7 +33,7 @@ export default function SideBar() {
       <div className="p-6">
         {/* Logo */}
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+          <div className="w-10 h-10 bg-primary-500 rounded-xl flex items-center justify-center">
             <span className="text-white font-bold text-lg">FP</span>
           </div>
           <div>
@@ -47,14 +47,14 @@ export default function SideBar() {
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
-            
+
             return (
               <Link
                 key={item.path}
                 to={item.path}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                   isActive
-                    ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg"
+                    ? "bg-primary-500 text-white shadow-lg"
                     : "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
                 }`}
               >
@@ -66,8 +66,10 @@ export default function SideBar() {
         </nav>
 
         {/* Resumo rápido */}
-        <div className="mt-8 p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border border-blue-100">
-          <h3 className="text-sm font-semibold text-gray-800 mb-2">Resumo Rápido</h3>
+        <div className="mt-8 p-4 bg-primary-50 rounded-xl border border-primary-200">
+          <h3 className="text-sm font-semibold text-gray-800 mb-2">
+            Resumo Rápido
+          </h3>
           <div className="space-y-2 text-xs">
             <div className="flex justify-between">
               <span className="text-gray-600">Saldo Total:</span>
@@ -75,7 +77,9 @@ export default function SideBar() {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Receitas:</span>
-              <span className="font-semibold text-blue-600">R$ 8.500,00</span>
+              <span className="font-semibold text-primary-600">
+                R$ 8.500,00
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Despesas:</span>
