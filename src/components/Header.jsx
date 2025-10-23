@@ -11,18 +11,22 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { usePlanner } from "../hooks/usePlanner.jsx";
+import { usePlannerColor } from "../hooks/usePlannerColor.js";
 
 export default function Header({ pageTitle, showPlannerSelector = false }) {
   const navigate = useNavigate();
 
   // Tenta usar o hook usePlanner, mas não falha se não estiver disponível
   let selectedPlanner = null;
+  let colors = null;
   try {
     const plannerContext = usePlanner();
     selectedPlanner = plannerContext?.selectedPlanner;
+    colors = usePlannerColor();
   } catch (error) {
     // Se não estiver dentro do PlannerProvider, selectedPlanner será null
     selectedPlanner = null;
+    colors = null;
   }
 
   const handleBackToPlannerSelection = () => {
@@ -61,7 +65,10 @@ export default function Header({ pageTitle, showPlannerSelector = false }) {
         <div className="flex items-center justify-between">
           {/* Título da página */}
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
+            <div 
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ backgroundColor: colors?.primary || '#3b82f6' }}
+            >
               <span className="text-white font-bold text-sm">FP</span>
             </div>
 
@@ -69,10 +76,17 @@ export default function Header({ pageTitle, showPlannerSelector = false }) {
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleBackToPlannerSelection}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-primary-50 to-primary-100 border border-primary-200 hover:from-primary-100 hover:to-primary-200 transition-all duration-200 group"
+                  className="flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 group"
+                  style={{
+                    background: `linear-gradient(to right, ${colors?.primary}10, ${colors?.primary}20)`,
+                    borderColor: `${colors?.primary}30`
+                  }}
                 >
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center text-white">
+                    <div 
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                      style={{ backgroundColor: colors?.primary }}
+                    >
                       {getPlannerIcon(selectedPlanner.type)}
                     </div>
                     <div className="text-left">
@@ -107,7 +121,10 @@ export default function Header({ pageTitle, showPlannerSelector = false }) {
             {/* Menu do usuário */}
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center">
+                <div 
+                  className="w-8 h-8 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: colors?.primary || '#3b82f6' }}
+                >
                   <User className="w-4 h-4 text-white" />
                 </div>
                 <div className="hidden md:block">

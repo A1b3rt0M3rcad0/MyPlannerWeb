@@ -11,6 +11,7 @@ import {
   Target,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { usePlannerColor } from "../hooks/usePlannerColor.js";
 
 const menuItems = [
   { icon: Home, label: "Dashboard", path: "/dashboard" },
@@ -27,13 +28,17 @@ const menuItems = [
 
 export default function SideBar() {
   const location = useLocation();
+  const colors = usePlannerColor();
 
   return (
     <aside className="w-64 bg-white/90 backdrop-blur-md border-r border-gray-200/50 shadow-sm">
       <div className="p-6">
         {/* Logo */}
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-primary-500 rounded-xl flex items-center justify-center">
+          <div 
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{ backgroundColor: colors.primary }}
+          >
             <span className="text-white font-bold text-lg">FP</span>
           </div>
           <div>
@@ -54,9 +59,10 @@ export default function SideBar() {
                 to={item.path}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                   isActive
-                    ? "bg-primary-500 text-white shadow-lg"
+                    ? "text-white shadow-lg"
                     : "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
                 }`}
+                style={isActive ? { backgroundColor: colors.primary } : {}}
               >
                 <Icon className="w-5 h-5" />
                 <span className="font-medium">{item.label}</span>
@@ -66,7 +72,13 @@ export default function SideBar() {
         </nav>
 
         {/* Resumo rápido */}
-        <div className="mt-8 p-4 bg-primary-50 rounded-xl border border-primary-200">
+        <div 
+          className="mt-8 p-4 rounded-xl border"
+          style={{ 
+            backgroundColor: `${colors.primary}10`,
+            borderColor: `${colors.primary}30`
+          }}
+        >
           <h3 className="text-sm font-semibold text-gray-800 mb-2">
             Resumo Rápido
           </h3>
@@ -77,7 +89,10 @@ export default function SideBar() {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Receitas:</span>
-              <span className="font-semibold text-primary-600">
+              <span 
+                className="font-semibold"
+                style={{ color: colors.primary }}
+              >
                 R$ 8.500,00
               </span>
             </div>

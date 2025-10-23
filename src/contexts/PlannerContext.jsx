@@ -38,6 +38,18 @@ export function PlannerProvider({ children }) {
       if (storedSelected) {
         const selectedData = JSON.parse(storedSelected);
         setSelectedPlanner(selectedData);
+      } else if (
+        response &&
+        response.planners &&
+        response.planners.length > 0
+      ) {
+        // Se não há planner selecionado, seleciona o primeiro automaticamente
+        const firstPlanner = response.planners[0];
+        setSelectedPlanner(firstPlanner);
+        localStorage.setItem(
+          PLANNER_CONFIG.SELECTED_PLANNER_KEY,
+          JSON.stringify(firstPlanner)
+        );
       }
     } catch (error) {
       console.error("❌ Erro ao carregar planners:", error);
@@ -48,6 +60,7 @@ export function PlannerProvider({ children }) {
           name: "Planner Pessoal",
           description: "Meu planejamento financeiro pessoal",
           type: "personal",
+          color: "#3b82f6", // blue-500
           members_count: 1,
           created_at: "2024-01-15",
           total_balance: 12500.0,
@@ -59,6 +72,7 @@ export function PlannerProvider({ children }) {
           name: "Família Silva",
           description: "Planejamento financeiro da família",
           type: "family",
+          color: "#22c55e", // green-500
           members_count: 4,
           created_at: "2024-02-10",
           total_balance: 25000.0,
@@ -70,6 +84,7 @@ export function PlannerProvider({ children }) {
           name: "Projeto Casa Nova",
           description: "Economia para compra da casa própria",
           type: "project",
+          color: "#8b5cf6", // violet-500
           members_count: 2,
           created_at: "2024-03-05",
           total_balance: 45000.0,
@@ -78,6 +93,23 @@ export function PlannerProvider({ children }) {
         },
       ];
       setPlanners(mockPlanners);
+
+      // Carrega planner selecionado do localStorage mesmo com dados mockados
+      const storedSelected = localStorage.getItem(
+        PLANNER_CONFIG.SELECTED_PLANNER_KEY
+      );
+      if (storedSelected) {
+        const selectedData = JSON.parse(storedSelected);
+        setSelectedPlanner(selectedData);
+      } else if (mockPlanners.length > 0) {
+        // Se não há planner selecionado, seleciona o primeiro automaticamente
+        const firstPlanner = mockPlanners[0];
+        setSelectedPlanner(firstPlanner);
+        localStorage.setItem(
+          PLANNER_CONFIG.SELECTED_PLANNER_KEY,
+          JSON.stringify(firstPlanner)
+        );
+      }
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,8 @@
 import BasePage from "../../components/layout/BasePage";
 import { usePlanner } from "../../hooks/usePlanner.jsx";
+import { usePlannerColor } from "../../hooks/usePlannerColor.js";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import {
   DollarSign,
   TrendingUp,
@@ -13,17 +16,34 @@ import {
 } from "lucide-react";
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const { selectedPlanner } = usePlanner();
+  const colors = usePlannerColor();
+
+  // Verifica se há planner selecionado, se não, redireciona para seleção
+  useEffect(() => {
+    const storedPlanner = localStorage.getItem(
+      "finplanner_v2_selected_planner"
+    );
+    if (!storedPlanner && !selectedPlanner) {
+      navigate("/planner/selection");
+    }
+  }, [selectedPlanner, navigate]);
 
   return (
-    <BasePage 
+    <BasePage
       pageTitle={selectedPlanner ? selectedPlanner.name : "Dashboard"}
       showPlannerSelector={true}
     >
       <div className="space-y-6">
         {/* Informações do Planner */}
         {selectedPlanner && (
-          <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl p-6 text-white">
+          <div
+            className="rounded-xl p-6 text-white"
+            style={{
+              background: `linear-gradient(135deg, ${colors.primary}, ${colors.primaryDark})`,
+            }}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
@@ -31,13 +51,11 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold">{selectedPlanner.name}</h2>
-                  <p className="text-primary-100">
-                    {selectedPlanner.description}
-                  </p>
+                  <p className="text-white/80">{selectedPlanner.description}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm text-primary-100">Membros</p>
+                <p className="text-sm text-white/80">Membros</p>
                 <p className="text-2xl font-bold">
                   {selectedPlanner.members_count}
                 </p>
@@ -51,10 +69,18 @@ export default function DashboardPage() {
           <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-primary-600">Saldo Total</p>
+                <p
+                  className="text-sm font-medium"
+                  style={{ color: colors.primary }}
+                >
+                  Saldo Total
+                </p>
                 <p className="text-2xl font-bold text-gray-800">R$ 12.450,00</p>
               </div>
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-primary-500">
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: colors.primary }}
+              >
                 <DollarSign className="w-6 h-6 text-white" />
               </div>
             </div>
@@ -130,7 +156,10 @@ export default function DashboardPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded bg-primary-500"></div>
+                  <div
+                    className="w-4 h-4 rounded shadow-sm"
+                    style={{ backgroundColor: colors.primary }}
+                  ></div>
                   <span className="text-sm text-gray-600">Alimentação</span>
                 </div>
                 <span className="text-sm font-semibold text-gray-800">
@@ -187,8 +216,11 @@ export default function DashboardPage() {
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
-                    className="h-2 rounded-full bg-primary-500"
-                    style={{ width: "75%" }}
+                    className="h-2 rounded-full transition-all duration-300"
+                    style={{
+                      width: "75%",
+                      backgroundColor: colors.primary,
+                    }}
                   ></div>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
@@ -207,8 +239,11 @@ export default function DashboardPage() {
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
-                    className="h-2 rounded-full bg-primary-500"
-                    style={{ width: "45%" }}
+                    className="h-2 rounded-full transition-all duration-300"
+                    style={{
+                      width: "45%",
+                      backgroundColor: colors.primary,
+                    }}
                   ></div>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
@@ -225,8 +260,11 @@ export default function DashboardPage() {
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
-                    className="h-2 rounded-full bg-primary-500"
-                    style={{ width: "20%" }}
+                    className="h-2 rounded-full transition-all duration-300"
+                    style={{
+                      width: "20%",
+                      backgroundColor: colors.primary,
+                    }}
                   ></div>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
