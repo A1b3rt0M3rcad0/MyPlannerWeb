@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Shield, Mail, Lock, AlertCircle } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
-import authAPI from "../../services/api/auth";
+import { authAPI } from "../../services/api/auth";
 import { ROUTES } from "../../config/constants";
 
 export default function AdminLogin() {
@@ -11,7 +11,34 @@ export default function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isAuthenticated, user, loading: authLoading } = useAuth();
+
+  // Verifica se já está autenticado como admin
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && user) {
+      // Verifica se é admin
+      const isAdmin = user.role === "admin" || user.is_super_admin || user.user_type === "admin";
+      if (isAdmin) {
+        console.log("✅ Usuário já autenticado como admin, redirecionando para dashboard");
+        navigate("/admin", { replace: true });
+      } else {
+        console.log("⚠️ Usuário autenticado mas não é admin, redirecionando para dashboard de usuário");
+        navigate("/dashboard", { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, authLoading, navigate]);
+
+  // Mostra loading enquanto verifica autenticação
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-yellow-500 mx-auto mb-4"></div>
+          <p className="text-white text-lg">Verificando autenticação...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,14 +49,17 @@ export default function AdminLogin() {
       const response = await authAPI.login(email, password);
 
       if (response.data?.access_token) {
-        // Extrai informações do usuário da resposta
+        // Decodifica o token JWT para extrair informações do usuário
+        const token = response.data.access_token;
+        const tokenPayload = JSON.parse(atob(token.split(".")[1]));
+
         const userInfo = {
-          id: response.data.user?.id || 1,
-          email: response.data.user?.email || email,
-          first_name: response.data.user?.first_name || email.split("@")[0],
-          last_name: response.data.user?.last_name || "",
-          role: response.data.user?.role || "user",
-          user_type: response.data.user?.user_type || "user",
+          id: tokenPayload.id,
+          email: tokenPayload.email,
+          first_name: tokenPayload.name?.split(" ")[0] || email.split("@")[0],
+          last_name: tokenPayload.name?.split(" ").slice(1).join(" ") || "",
+          role: tokenPayload.role,
+          user_type: tokenPayload.role, // Para compatibilidade
         };
 
         // Salva tokens e informações do usuário
@@ -42,11 +72,14 @@ export default function AdminLogin() {
         // Feedback de sucesso
         console.log("✅ Login realizado com sucesso");
         console.log("Usuário:", userInfo.first_name);
+        console.log("Role:", userInfo.role);
 
-        // Redireciona baseado no role
-        if (userInfo.role === "admin" || userInfo.user_type === "admin") {
-          navigate(ROUTES.ADMIN_DASHBOARD);
+        // Redireciona baseado no role - SEMPRE para admin dashboard se for admin
+        if (userInfo.role === "admin") {
+          console.log("🔄 Redirecionando para dashboard administrativo");
+          navigate(ROUTES.ADMIN);
         } else {
+          console.log("🔄 Redirecionando para dashboard de usuário");
           navigate(ROUTES.DASHBOARD);
         }
       }

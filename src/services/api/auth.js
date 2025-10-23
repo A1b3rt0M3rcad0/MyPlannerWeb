@@ -41,4 +41,5 @@ const authAPI = {
   },
 };
 
+export { authAPI };
 export default authAPI;

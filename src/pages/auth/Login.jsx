@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { authAPI } from "../../services/api/auth";
@@ -12,8 +12,40 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const { login } = useAuth();
+  const { login, isAuthenticated, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+
+  // Verifica se já está autenticado
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && user) {
+      // Verifica se é admin
+      const isAdmin =
+        user.role === "admin" ||
+        user.is_super_admin ||
+        user.user_type === "admin";
+      if (isAdmin) {
+        console.log(
+          "✅ Usuário já autenticado como admin, redirecionando para dashboard admin"
+        );
+        navigate("/admin", { replace: true });
+      } else {
+        console.log("✅ Usuário já autenticado, redirecionando para dashboard");
+        navigate("/dashboard", { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, authLoading, navigate]);
+
+  // Mostra loading enquanto verifica autenticação
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-secondary-900 via-secondary-800 to-secondary-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-yellow-500 mx-auto mb-4"></div>
+          <p className="text-white text-lg">Verificando autenticação...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,14 +56,17 @@ const Login = () => {
       const response = await authAPI.login(email, password);
 
       if (response.data?.access_token) {
-        // Extrai informações do usuário da resposta
+        // Decodifica o token JWT para extrair informações do usuário
+        const token = response.data.access_token;
+        const tokenPayload = JSON.parse(atob(token.split(".")[1]));
+
         const userInfo = {
-          id: response.data.user?.id || 1,
-          email: response.data.user?.email || email,
-          first_name: response.data.user?.first_name || email.split("@")[0],
-          last_name: response.data.user?.last_name || "",
-          role: response.data.user?.role || "user",
-          user_type: response.data.user?.user_type || "user",
+          id: tokenPayload.id,
+          email: tokenPayload.email,
+          first_name: tokenPayload.name?.split(" ")[0] || email.split("@")[0],
+          last_name: tokenPayload.name?.split(" ").slice(1).join(" ") || "",
+          role: tokenPayload.role,
+          user_type: tokenPayload.role, // Para compatibilidade
         };
 
         // Salva tokens e informações do usuário
@@ -44,11 +79,14 @@ const Login = () => {
         // Feedback de sucesso
         console.log("✅ Login realizado com sucesso");
         console.log("Usuário:", userInfo.first_name);
+        console.log("Role:", userInfo.role);
 
         // Redireciona baseado no role
-        if (userInfo.role === "admin" || userInfo.user_type === "admin") {
+        if (userInfo.role === "admin") {
+          console.log("🔄 Redirecionando para dashboard administrativo");
           navigate(ROUTES.ADMIN_DASHBOARD);
         } else {
+          console.log("🔄 Redirecionando para dashboard de usuário");
           navigate(ROUTES.DASHBOARD);
         }
       }
@@ -73,9 +111,7 @@ const Login = () => {
             <h1 className="text-2xl font-bold text-white mb-2">
               Entrar na sua conta
             </h1>
-            <p className="text-gray-300">
-              Acesse sua conta FinPlanner
-            </p>
+            <p className="text-gray-300">Acesse sua conta FinPlanner</p>
           </div>
 
           {/* Formulário */}
