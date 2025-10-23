@@ -21,6 +21,8 @@ export default function UsersPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const [pagination, setPagination] = useState({
     page: 1,
     pageSize: 10,
@@ -80,32 +82,50 @@ export default function UsersPage() {
   const handleDeleteUser = async (userId) => {
     if (window.confirm("Tem certeza que deseja deletar este usuário?")) {
       try {
+        setError(null);
+        setSuccess(null);
         await usersApi.deleteUser(userId);
-        loadUsers();
+        setSuccess("Usuário deletado com sucesso!");
+        loadUsers(pagination.page); // Manter página atual
+        // Limpar mensagem de sucesso após 3 segundos
+        setTimeout(() => setSuccess(null), 3000);
       } catch (error) {
         console.error("Erro ao deletar usuário:", error);
+        setError(error.response?.data?.message || "Erro ao deletar usuário");
       }
     }
   };
 
   const handleCreateUser = async (userData) => {
     try {
-      await usersApi.createUser(userData);
+      setError(null);
+      setSuccess(null);
+      const response = await usersApi.createUser(userData);
+      setSuccess("Usuário criado com sucesso!");
       setShowCreateModal(false);
-      loadUsers();
+      loadUsers(1); // Recarregar lista
+      // Limpar mensagem de sucesso após 3 segundos
+      setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
       console.error("Erro ao criar usuário:", error);
+      setError(error.response?.data?.message || "Erro ao criar usuário");
     }
   };
 
   const handleUpdateUser = async (userId, userData) => {
     try {
+      setError(null);
+      setSuccess(null);
       await usersApi.updateUser(userId, userData);
+      setSuccess("Usuário atualizado com sucesso!");
       setShowEditModal(false);
       setSelectedUser(null);
-      loadUsers();
+      loadUsers(pagination.page); // Manter página atual
+      // Limpar mensagem de sucesso após 3 segundos
+      setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
       console.error("Erro ao atualizar usuário:", error);
+      setError(error.response?.data?.message || "Erro ao atualizar usuário");
     }
   };
 
@@ -128,6 +148,45 @@ export default function UsersPage() {
           </button>
         </div>
       </div>
+
+      {/* Mensagens de feedback */}
+      {error && (
+        <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="text-red-600">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {success && (
+        <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="text-green-600">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-green-700">{success}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="mb-6 bg-white rounded-lg shadow-sm border p-4">
@@ -386,10 +445,45 @@ function CreateUserModal({ onClose, onSubmit }) {
     role: "user",
     is_active: true,
   });
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
-  const handleSubmit = (e) => {
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = "Nome é obrigatório";
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email é obrigatório";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Email inválido";
+    }
+
+    if (!formData.password.trim()) {
+      newErrors.password = "Senha é obrigatória";
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Senha deve ter pelo menos 6 caracteres";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(formData);
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await onSubmit(formData);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -478,9 +572,36 @@ function CreateUserModal({ onClose, onSubmit }) {
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              disabled={loading}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              Criar Usuário
+              {loading ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Criando...
+                </>
+              ) : (
+                "Criar Usuário"
+              )}
             </button>
           </div>
         </form>
