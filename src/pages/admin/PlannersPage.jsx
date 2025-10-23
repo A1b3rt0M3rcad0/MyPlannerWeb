@@ -12,6 +12,7 @@ import {
   FileText,
 } from "lucide-react";
 import { plannersAPI } from "../../services/api/planners";
+import ColorWheel from "../../components/ColorWheel";
 
 export default function PlannersPage() {
   const [planners, setPlanners] = useState([]);
@@ -505,17 +506,6 @@ function CreatePlannerModal({ onClose, onSubmit }) {
     }
   };
 
-  const predefinedColors = [
-    "#3B82F6",
-    "#EF4444",
-    "#10B981",
-    "#F59E0B",
-    "#8B5CF6",
-    "#EC4899",
-    "#06B6D4",
-    "#84CC16",
-  ];
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
@@ -563,33 +553,17 @@ function CreatePlannerModal({ onClose, onSubmit }) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Cor
             </label>
-            <div className="space-y-2">
-              <input
-                type="color"
+            <div className="flex justify-center">
+              <ColorWheel
                 value={formData.color}
-                onChange={(e) =>
-                  setFormData({ ...formData, color: e.target.value })
-                }
-                className="w-full h-10 border border-gray-300 rounded-lg"
+                onChange={(color) => setFormData({ ...formData, color })}
+                size={150}
+                showPresets={true}
+                className="w-full"
               />
-              <div className="flex gap-2 flex-wrap">
-                {predefinedColors.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, color })}
-                    className={`w-8 h-8 rounded-full border-2 ${
-                      formData.color === color
-                        ? "border-gray-800"
-                        : "border-gray-300"
-                    }`}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
             </div>
           </div>
           <div className="flex gap-3 pt-4">
@@ -742,33 +716,17 @@ function EditPlannerModal({ planner, onClose, onSubmit }) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Cor
             </label>
-            <div className="space-y-2">
-              <input
-                type="color"
+            <div className="flex justify-center">
+              <ColorWheel
                 value={formData.color}
-                onChange={(e) =>
-                  setFormData({ ...formData, color: e.target.value })
-                }
-                className="w-full h-10 border border-gray-300 rounded-lg"
+                onChange={(color) => setFormData({ ...formData, color })}
+                size={150}
+                showPresets={true}
+                className="w-full"
               />
-              <div className="flex gap-2 flex-wrap">
-                {predefinedColors.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, color })}
-                    className={`w-8 h-8 rounded-full border-2 ${
-                      formData.color === color
-                        ? "border-gray-800"
-                        : "border-gray-300"
-                    }`}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
             </div>
           </div>
           <div className="flex gap-3 pt-4">

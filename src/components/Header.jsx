@@ -12,9 +12,11 @@ import {
 import { useNavigate } from "react-router-dom";
 import { usePlanner } from "../hooks/usePlanner.jsx";
 import { usePlannerColor } from "../hooks/usePlannerColor.js";
+import { useAuth } from "../hooks/useAuth";
 
 export default function Header({ pageTitle, showPlannerSelector = false }) {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   // Tenta usar o hook usePlanner, mas não falha se não estiver disponível
   let selectedPlanner = null;
@@ -31,6 +33,12 @@ export default function Header({ pageTitle, showPlannerSelector = false }) {
 
   const handleBackToPlannerSelection = () => {
     navigate("/planner/selection");
+  };
+
+  const handleLogout = () => {
+    if (window.confirm("Tem certeza que deseja sair?")) {
+      logout();
+    }
   };
 
   const getPlannerIcon = (type) => {
@@ -65,9 +73,9 @@ export default function Header({ pageTitle, showPlannerSelector = false }) {
         <div className="flex items-center justify-between">
           {/* Título da página */}
           <div className="flex items-center gap-3">
-            <div 
+            <div
               className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: colors?.primary || '#3b82f6' }}
+              style={{ backgroundColor: colors?.primary || "#3b82f6" }}
             >
               <span className="text-white font-bold text-sm">FP</span>
             </div>
@@ -79,11 +87,11 @@ export default function Header({ pageTitle, showPlannerSelector = false }) {
                   className="flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 group"
                   style={{
                     background: `linear-gradient(to right, ${colors?.primary}10, ${colors?.primary}20)`,
-                    borderColor: `${colors?.primary}30`
+                    borderColor: `${colors?.primary}30`,
                   }}
                 >
                   <div className="flex items-center gap-2">
-                    <div 
+                    <div
                       className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
                       style={{ backgroundColor: colors?.primary }}
                     >
@@ -121,25 +129,34 @@ export default function Header({ pageTitle, showPlannerSelector = false }) {
             {/* Menu do usuário */}
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
-                <div 
+                <div
                   className="w-8 h-8 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: colors?.primary || '#3b82f6' }}
+                  style={{ backgroundColor: colors?.primary || "#3b82f6" }}
                 >
                   <User className="w-4 h-4 text-white" />
                 </div>
                 <div className="hidden md:block">
                   <p className="text-sm font-medium text-gray-800">
-                    João Silva
+                    {user?.name || "Usuário"}
                   </p>
-                  <p className="text-xs text-gray-500">joao@email.com</p>
+                  <p className="text-xs text-gray-500">
+                    {user?.email || "email@exemplo.com"}
+                  </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-1">
-                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                <button
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  title="Configurações"
+                >
                   <Settings className="w-4 h-4 text-gray-600" />
                 </button>
-                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                <button
+                  onClick={handleLogout}
+                  className="p-2 rounded-lg hover:bg-red-100 hover:text-red-600 transition-colors"
+                  title="Sair"
+                >
                   <LogOut className="w-4 h-4 text-gray-600" />
                 </button>
               </div>
