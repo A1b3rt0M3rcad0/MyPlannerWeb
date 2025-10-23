@@ -1,16 +1,16 @@
-import { useState, useEffect } from "react";
-import { 
-  Users, 
-  Plus, 
-  Search, 
-  Edit, 
-  Trash2, 
+import { useState, useEffect, useCallback } from "react";
+import {
+  Users,
+  Plus,
+  Search,
+  Edit,
+  Trash2,
   Eye,
   Shield,
   UserCheck,
   UserX,
   Mail,
-  Calendar
+  Calendar,
 } from "lucide-react";
 import { usersApi } from "../../services/api/users";
 
@@ -21,26 +21,60 @@ export default function UsersPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 10,
+    total: 0,
+  });
+
+  const loadUsers = useCallback(
+    async (page = 1, pageSize = pagination.pageSize) => {
+      try {
+        setLoading(true);
+        const response = await usersApi.getUsers(page, pageSize, searchTerm);
+        setUsers(response.users || []);
+        setPagination((prev) => ({
+          ...prev,
+          page: response.pagination?.page || page,
+          pageSize: response.pagination?.page_size || pageSize,
+          total: response.pagination?.total || 0,
+        }));
+      } catch (error) {
+        console.error("Erro ao carregar usuários:", error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [searchTerm, pagination.pageSize]
+  );
 
   useEffect(() => {
-    loadUsers();
-  }, []);
+    const timeoutId = setTimeout(() => {
+      loadUsers(1); // Reset para página 1 quando buscar
+    }, 300); // Debounce de 300ms
 
-  const loadUsers = async () => {
-    try {
-      setLoading(true);
-      const response = await usersApi.getUsers();
-      setUsers(response.data || []);
-    } catch (error) {
-      console.error("Erro ao carregar usuários:", error);
-    } finally {
-      setLoading(false);
-    }
+    return () => clearTimeout(timeoutId);
+  }, [loadUsers]);
+
+  // A filtragem agora é feita no backend
+  const filteredUsers = users;
+
+  // Funções de paginação
+  const handlePageChange = (newPage) => {
+    loadUsers(newPage);
   };
 
-  const filteredUsers = users.filter(user =>
-    user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  const handlePageSizeChange = (newPageSize) => {
+    setPagination((prev) => ({ ...prev, pageSize: newPageSize, page: 1 }));
+    loadUsers(1, newPageSize);
+  };
+
+  // Calcular informações de paginação
+  const totalPages = Math.ceil(pagination.total / pagination.pageSize);
+  const startItem = (pagination.page - 1) * pagination.pageSize + 1;
+  const endItem = Math.min(
+    pagination.page * pagination.pageSize,
+    pagination.total
   );
 
   const handleDeleteUser = async (userId) => {
@@ -81,11 +115,13 @@ export default function UsersPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-800">Usuários</h1>
-            <p className="text-gray-600">Gerencie todos os usuários do sistema</p>
+            <p className="text-gray-600">
+              Gerencie todos os usuários do sistema
+            </p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Plus size={20} />
             Novo Usuário
@@ -97,13 +133,16 @@ export default function UsersPage() {
       <div className="mb-6 bg-white rounded-lg shadow-sm border p-4">
         <div className="flex items-center gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <Search
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              size={20}
+            />
             <input
               type="text"
               placeholder="Buscar usuários..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -113,7 +152,7 @@ export default function UsersPage() {
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
         {loading ? (
           <div className="p-8 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-2 text-gray-600">Carregando usuários...</p>
           </div>
         ) : (
@@ -146,9 +185,11 @@ export default function UsersPage() {
                   <tr key={user.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                          <span className="text-primary-600 font-semibold">
-                            {user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || "U"}
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <span className="text-blue-600 font-semibold">
+                            {user.name?.[0]?.toUpperCase() ||
+                              user.email?.[0]?.toUpperCase() ||
+                              "U"}
                           </span>
                         </div>
                         <div className="ml-4">
@@ -165,21 +206,25 @@ export default function UsersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        user.role === 'admin' 
-                          ? 'bg-red-100 text-red-800' 
-                          : 'bg-blue-100 text-blue-800'
-                      }`}>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          user.role === "admin"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-blue-100 text-blue-800"
+                        }`}
+                      >
                         <Shield size={12} className="mr-1" />
-                        {user.role === 'admin' ? 'Admin' : 'Usuário'}
+                        {user.role === "admin" ? "Admin" : "Usuário"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        user.is_active 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          user.is_active
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
                         {user.is_active ? (
                           <>
                             <UserCheck size={12} className="mr-1" />
@@ -196,7 +241,11 @@ export default function UsersPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div className="flex items-center">
                         <Calendar size={16} className="mr-2 text-gray-400" />
-                        {user.created_at ? new Date(user.created_at).toLocaleDateString('pt-BR') : '-'}
+                        {user.created_at
+                          ? new Date(user.created_at).toLocaleDateString(
+                              "pt-BR"
+                            )
+                          : "-"}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -206,7 +255,7 @@ export default function UsersPage() {
                             setSelectedUser(user);
                             setShowEditModal(true);
                           }}
-                          className="text-primary-600 hover:text-primary-900 p-1"
+                          className="text-blue-600 hover:text-blue-900 p-1"
                           title="Editar"
                         >
                           <Edit size={16} />
@@ -227,6 +276,84 @@ export default function UsersPage() {
           </div>
         )}
       </div>
+
+      {/* Controles de paginação */}
+      {!loading && filteredUsers.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mt-4">
+          <div className="flex items-center justify-between">
+            {/* Informações da paginação */}
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-700">
+                Mostrando {startItem} a {endItem} de {pagination.total} usuários
+              </span>
+
+              {/* Seletor de itens por página */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-700">Itens por página:</span>
+                <select
+                  value={pagination.pageSize}
+                  onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                  className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Navegação de páginas */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={pagination.page === 1}
+                className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Anterior
+              </button>
+
+              {/* Números das páginas */}
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (pagination.page <= 3) {
+                    pageNum = i + 1;
+                  } else if (pagination.page >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = pagination.page - 2 + i;
+                  }
+
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`px-3 py-1 text-sm border rounded ${
+                        pageNum === pagination.page
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={pagination.page === totalPages}
+                className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Próximo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de criação/edição será implementado aqui */}
       {showCreateModal && (
@@ -253,11 +380,11 @@ export default function UsersPage() {
 // Componente de modal para criar usuário
 function CreateUserModal({ onClose, onSubmit }) {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    role: 'user',
-    is_active: true
+    name: "",
+    email: "",
+    password: "",
+    role: "user",
+    is_active: true,
   });
 
   const handleSubmit = (e) => {
@@ -278,8 +405,10 @@ function CreateUserModal({ onClose, onSubmit }) {
               type="text"
               required
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -290,8 +419,10 @@ function CreateUserModal({ onClose, onSubmit }) {
               type="email"
               required
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -302,8 +433,10 @@ function CreateUserModal({ onClose, onSubmit }) {
               type="password"
               required
               value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -312,8 +445,10 @@ function CreateUserModal({ onClose, onSubmit }) {
             </label>
             <select
               value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              onChange={(e) =>
+                setFormData({ ...formData, role: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="user">Usuário</option>
               <option value="admin">Administrador</option>
@@ -324,7 +459,9 @@ function CreateUserModal({ onClose, onSubmit }) {
               type="checkbox"
               id="is_active"
               checked={formData.is_active}
-              onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+              onChange={(e) =>
+                setFormData({ ...formData, is_active: e.target.checked })
+              }
               className="mr-2"
             />
             <label htmlFor="is_active" className="text-sm text-gray-700">
@@ -341,7 +478,7 @@ function CreateUserModal({ onClose, onSubmit }) {
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Criar Usuário
             </button>
@@ -355,10 +492,10 @@ function CreateUserModal({ onClose, onSubmit }) {
 // Componente de modal para editar usuário
 function EditUserModal({ user, onClose, onSubmit }) {
   const [formData, setFormData] = useState({
-    name: user.name || '',
-    email: user.email || '',
-    role: user.role || 'user',
-    is_active: user.is_active ?? true
+    name: user.name || "",
+    email: user.email || "",
+    role: user.role || "user",
+    is_active: user.is_active ?? true,
   });
 
   const handleSubmit = (e) => {
@@ -379,8 +516,10 @@ function EditUserModal({ user, onClose, onSubmit }) {
               type="text"
               required
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -391,8 +530,10 @@ function EditUserModal({ user, onClose, onSubmit }) {
               type="email"
               required
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
@@ -401,8 +542,10 @@ function EditUserModal({ user, onClose, onSubmit }) {
             </label>
             <select
               value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              onChange={(e) =>
+                setFormData({ ...formData, role: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="user">Usuário</option>
               <option value="admin">Administrador</option>
@@ -413,7 +556,9 @@ function EditUserModal({ user, onClose, onSubmit }) {
               type="checkbox"
               id="is_active"
               checked={formData.is_active}
-              onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+              onChange={(e) =>
+                setFormData({ ...formData, is_active: e.target.checked })
+              }
               className="mr-2"
             />
             <label htmlFor="is_active" className="text-sm text-gray-700">
@@ -430,7 +575,7 @@ function EditUserModal({ user, onClose, onSubmit }) {
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Salvar Alterações
             </button>

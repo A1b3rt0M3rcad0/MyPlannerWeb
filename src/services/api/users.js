@@ -1,10 +1,19 @@
-import api from '../../config/api';
+import api from "../../config/api";
 
 // Usuários - Apenas admins podem acessar
 export const usersApi = {
   // Listar todos os usuários
-  getUsers: async () => {
-    const response = await api.get('/users');
+  getUsers: async (page = 1, pageSize = 50, search = "") => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      page_size: pageSize.toString(),
+    });
+
+    if (search) {
+      params.append("search", search);
+    }
+
+    const response = await api.get(`/users?${params}`);
     return response.data;
   },
 
@@ -16,7 +25,7 @@ export const usersApi = {
 
   // Criar usuário (registro público)
   createUser: async (userData) => {
-    const response = await api.post('/user/create', userData);
+    const response = await api.post("/user/create", userData);
     return response.data;
   },
 
@@ -30,5 +39,5 @@ export const usersApi = {
   deleteUser: async (userId) => {
     const response = await api.delete(`/user/${userId}`);
     return response.data;
-  }
+  },
 };

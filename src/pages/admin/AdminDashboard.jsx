@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import {
   Wallet,
   Users,
@@ -15,23 +16,54 @@ import {
   Calendar,
   Eye,
   ArrowRight,
+  Loader2,
+  UserPlus,
+  Zap,
+  Briefcase,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
+import { dashboardAPI } from "../../services/api/dashboard";
 
 export default function AdminDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    activeSubscriptions: 0,
+    recentUsers: [],
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Dados mockados para demonstração
-  const stats = {
-    totalUsers: 1247,
-    activeUsers: 892,
-    totalPlanners: 156,
-    totalCategories: 48,
-    totalAccounts: 312,
-    totalTransactions: 2847,
-    totalPlans: 5,
-  };
+  // Carregar dados do dashboard
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        setLoading(true);
+        const response = await dashboardAPI.getStats();
+        // A API retorna os dados diretamente, mas precisamos mapear de snake_case para camelCase
+        setStats({
+          totalUsers: response.total_users,
+          activeSubscriptions: response.active_subscriptions,
+          recentUsers: response.recent_users,
+        });
+        setError(null); // Limpar erro se houver
+      } catch (err) {
+        console.error("Erro ao carregar dashboard:", err);
+        setError("Erro ao carregar dados do dashboard");
+        // Em caso de erro, usar dados mockados como fallback
+        setStats({
+          totalUsers: 10,
+          activeSubscriptions: 3,
+          recentUsers: [],
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, []);
 
   // Dados de transações recentes
   const recentTransactions = [
@@ -80,322 +112,304 @@ export default function AdminDashboard() {
     return new Date(dateString).toLocaleDateString("pt-BR");
   };
 
+  if (loading) {
+    return (
+      <div className="p-6 bg-gray-50 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-yellow-600 mx-auto mb-4" />
+          <p className="text-gray-600">Carregando dados do dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Dashboard Administrativo
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Bem-vindo de volta, {user?.first_name || "Administrador"}! 👋
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate("/admin/plans")}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-gray-900 font-semibold rounded-xl hover:from-yellow-600 hover:to-yellow-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-              >
-                <Plus size={20} />
-                Novo Plano
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Cards de estatísticas principais */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300 group">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        {/* Header mais compacto */}
+        <div className="mb-6">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600 mb-1">
-                  Total de Usuários
+              <div>
+                <h1 className="text-2xl font-semibold text-gray-900 mb-1">
+                  Dashboard Administrativo
+                </h1>
+                <p className="text-sm text-gray-600">
+                  Bem-vindo de volta, {user?.first_name || "Administrador"}! 👋
                 </p>
-                <p className="text-3xl font-bold text-gray-900 mb-2">
-                  {stats.totalUsers.toLocaleString()}
-                </p>
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    <TrendingUp size={12} className="mr-1" />
-                    +12.5%
-                  </span>
-                  <span className="text-sm text-gray-500">vs mês anterior</span>
+                {error && (
+                  <p className="text-xs text-red-600 mt-1">
+                    ⚠️ {error} (exibindo dados de exemplo)
+                  </p>
+                )}
+              </div>
+              <div className="hidden lg:block">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm">
+                  <BarChart3 className="w-6 h-6 text-white" />
                 </div>
-              </div>
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <Users className="w-8 h-8 text-white" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300 group">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600 mb-1">
-                  Usuários Ativos
-                </p>
-                <p className="text-3xl font-bold text-gray-900 mb-2">
-                  {stats.activeUsers.toLocaleString()}
-                </p>
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    <TrendingUp size={12} className="mr-1" />
-                    +8.3%
-                  </span>
-                  <span className="text-sm text-gray-500">vs mês anterior</span>
-                </div>
-              </div>
-              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <Activity className="w-8 h-8 text-white" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300 group">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600 mb-1">
-                  Planners Criados
-                </p>
-                <p className="text-3xl font-bold text-gray-900 mb-2">
-                  {stats.totalPlanners.toLocaleString()}
-                </p>
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    <TrendingUp size={12} className="mr-1" />
-                    +15.2%
-                  </span>
-                  <span className="text-sm text-gray-500">vs mês anterior</span>
-                </div>
-              </div>
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <FolderOpen className="w-8 h-8 text-white" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300 group">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600 mb-1">
-                  Transações
-                </p>
-                <p className="text-3xl font-bold text-gray-900 mb-2">
-                  {stats.totalTransactions.toLocaleString()}
-                </p>
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                    <TrendingUp size={12} className="mr-1" />
-                    +22.1%
-                  </span>
-                  <span className="text-sm text-gray-500">vs mês anterior</span>
-                </div>
-              </div>
-              <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <Receipt className="w-8 h-8 text-white" />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Cards secundários */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Categorias
-              </h3>
-              <Tag className="w-5 h-5 text-gray-400" />
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center">
-                <Tag className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">
-                  {stats.totalCategories}
-                </p>
-                <p className="text-sm text-gray-500">categorias ativas</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Contas</h3>
-              <Wallet className="w-5 h-5 text-gray-400" />
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center">
-                <Wallet className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">
-                  {stats.totalAccounts}
-                </p>
-                <p className="text-sm text-gray-500">contas cadastradas</p>
+        {/* Cards de estatísticas compactos */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {/* Total de usuários */}
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Users className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    Total de Usuários
+                  </p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {loading ? (
+                      <div className="animate-pulse bg-gray-200 h-6 w-12 rounded"></div>
+                    ) : (
+                      stats.totalUsers?.toLocaleString() || 0
+                    )}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Planos</h3>
-              <CreditCard className="w-5 h-5 text-gray-400" />
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl flex items-center justify-center">
-                <CreditCard className="w-6 h-6 text-gray-900" />
+          {/* Planos ativos */}
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <CreditCard className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    Planos Ativos
+                  </p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {loading ? (
+                      <div className="animate-pulse bg-gray-200 h-6 w-12 rounded"></div>
+                    ) : (
+                      stats.activeSubscriptions || 0
+                    )}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">
-                  {stats.totalPlans}
-                </p>
-                <p className="text-sm text-gray-500">planos disponíveis</p>
+            </div>
+          </div>
+
+          {/* Usuários recentes */}
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <UserPlus className="w-5 h-5 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    Novos (7 dias)
+                  </p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {loading ? (
+                      <div className="animate-pulse bg-gray-200 h-6 w-12 rounded"></div>
+                    ) : (
+                      stats.recentUsers?.length || 0
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Taxa de crescimento */}
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-orange-600" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    Crescimento
+                  </p>
+                  <p className="text-2xl font-semibold text-gray-900">+12%</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Seção de transações recentes e ações rápidas */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Transações recentes */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">
-                Transações Recentes
-              </h3>
-              <button
-                onClick={() => navigate("/admin/transactions")}
-                className="text-yellow-600 hover:text-yellow-700 font-medium text-sm flex items-center gap-1"
-              >
-                Ver todas
-                <ArrowRight size={16} />
-              </button>
-            </div>
-            <div className="space-y-4">
-              {recentTransactions.map((transaction) => (
-                <div
-                  key={transaction.id}
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        transaction.is_income ? "bg-green-100" : "bg-red-100"
-                      }`}
-                    >
-                      {transaction.is_income ? (
-                        <TrendingUp className="w-5 h-5 text-green-600" />
-                      ) : (
-                        <TrendingDown className="w-5 h-5 text-red-600" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {transaction.description}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {transaction.category}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p
-                      className={`font-semibold ${
-                        transaction.is_income
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      {transaction.is_income ? "+" : "-"}
-                      {formatCurrency(transaction.amount)}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {formatDate(transaction.date)}
-                    </p>
-                  </div>
+        {/* Lista de usuários recentes compacta */}
+        <div className="mb-6">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <UserPlus className="w-4 h-4 text-blue-600" />
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Ações rápidas */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6">
-              Ações Rápidas
-            </h3>
-            <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Usuários Recentes
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Criados nos últimos 7 dias
+                  </p>
+                </div>
+              </div>
               <button
                 onClick={() => navigate("/admin/users")}
-                className="w-full flex items-center gap-4 p-4 border-2 border-dashed border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50 transition-all group"
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 transition-colors"
               >
-                <div className="w-12 h-12 bg-blue-100 group-hover:bg-blue-500 rounded-xl flex items-center justify-center transition-colors">
-                  <Users className="w-6 h-6 text-blue-600 group-hover:text-white transition-colors" />
-                </div>
-                <div className="text-left">
-                  <p className="font-semibold text-gray-900">
-                    Gerenciar Usuários
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Visualizar e editar usuários do sistema
-                  </p>
-                </div>
-                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors ml-auto" />
+                Ver todos
+                <ArrowRight className="w-4 h-4" />
               </button>
+            </div>
 
-              <button
-                onClick={() => navigate("/admin/plans")}
-                className="w-full flex items-center gap-4 p-4 border-2 border-dashed border-gray-200 rounded-xl hover:border-green-300 hover:bg-green-50 transition-all group"
-              >
-                <div className="w-12 h-12 bg-green-100 group-hover:bg-green-500 rounded-xl flex items-center justify-center transition-colors">
-                  <CreditCard className="w-6 h-6 text-green-600 group-hover:text-white transition-colors" />
+            <div className="p-4">
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
-                <div className="text-left">
-                  <p className="font-semibold text-gray-900">
-                    Planos de Assinatura
-                  </p>
+              ) : stats.recentUsers?.length > 0 ? (
+                <div className="space-y-3">
+                  {stats.recentUsers.map((user) => (
+                    <div
+                      key={user.id}
+                      className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <span className="text-blue-600 font-medium text-sm">
+                            {user.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900 text-sm">
+                            {user.name}
+                          </p>
+                          <p className="text-xs text-gray-500">{user.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`px-2 py-1 rounded-md text-xs font-medium ${
+                            user.is_active
+                              ? "bg-green-100 text-green-700"
+                              : "bg-red-100 text-red-700"
+                          }`}
+                        >
+                          {user.is_active ? "Ativo" : "Inativo"}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {new Date(user.created_at).toLocaleDateString(
+                            "pt-BR"
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Users className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                   <p className="text-sm text-gray-500">
-                    Criar e gerenciar planos premium
+                    Nenhum usuário recente
                   </p>
                 </div>
-                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-green-500 transition-colors ml-auto" />
-              </button>
+              )}
+            </div>
+          </div>
+        </div>
 
-              <button
-                onClick={() => navigate("/admin/transactions")}
-                className="w-full flex items-center gap-4 p-4 border-2 border-dashed border-gray-200 rounded-xl hover:border-purple-300 hover:bg-purple-50 transition-all group"
-              >
-                <div className="w-12 h-12 bg-purple-100 group-hover:bg-purple-500 rounded-xl flex items-center justify-center transition-colors">
-                  <Receipt className="w-6 h-6 text-purple-600 group-hover:text-white transition-colors" />
+        {/* Ações rápidas compactas */}
+        <div className="mb-6">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                  <Zap className="w-4 h-4 text-yellow-600" />
                 </div>
-                <div className="text-left">
-                  <p className="font-semibold text-gray-900">Ver Transações</p>
-                  <p className="text-sm text-gray-500">
-                    Acompanhar todas as transações
-                  </p>
-                </div>
-                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-purple-500 transition-colors ml-auto" />
-              </button>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Ações Rápidas
+                </h3>
+              </div>
+            </div>
+            <div className="p-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                <button
+                  onClick={() => navigate("/admin/users")}
+                  className="flex flex-col items-center p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200"
+                >
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mb-2">
+                    <Users className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <span className="text-xs font-medium text-gray-700">
+                    Usuários
+                  </span>
+                </button>
 
-              <button
-                onClick={() => navigate("/admin/planners")}
-                className="w-full flex items-center gap-4 p-4 border-2 border-dashed border-gray-200 rounded-xl hover:border-orange-300 hover:bg-orange-50 transition-all group"
-              >
-                <div className="w-12 h-12 bg-orange-100 group-hover:bg-orange-500 rounded-xl flex items-center justify-center transition-colors">
-                  <FolderOpen className="w-6 h-6 text-orange-600 group-hover:text-white transition-colors" />
-                </div>
-                <div className="text-left">
-                  <p className="font-semibold text-gray-900">Planners</p>
-                  <p className="text-sm text-gray-500">
-                    Gerenciar planners financeiros
-                  </p>
-                </div>
-                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-orange-500 transition-colors ml-auto" />
-              </button>
+                <button
+                  onClick={() => navigate("/admin/subscription-plans")}
+                  className="flex flex-col items-center p-3 rounded-lg border border-gray-200 hover:border-green-300 hover:bg-green-50 transition-all duration-200"
+                >
+                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mb-2">
+                    <CreditCard className="w-4 h-4 text-green-600" />
+                  </div>
+                  <span className="text-xs font-medium text-gray-700">
+                    Planos
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => navigate("/admin/planners")}
+                  className="flex flex-col items-center p-3 rounded-lg border border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-all duration-200"
+                >
+                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mb-2">
+                    <Briefcase className="w-4 h-4 text-purple-600" />
+                  </div>
+                  <span className="text-xs font-medium text-gray-700">
+                    Planners
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => navigate("/admin/categories")}
+                  className="flex flex-col items-center p-3 rounded-lg border border-gray-200 hover:border-orange-300 hover:bg-orange-50 transition-all duration-200"
+                >
+                  <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mb-2">
+                    <Tag className="w-4 h-4 text-orange-600" />
+                  </div>
+                  <span className="text-xs font-medium text-gray-700">
+                    Categorias
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => navigate("/admin/accounts")}
+                  className="flex flex-col items-center p-3 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200"
+                >
+                  <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center mb-2">
+                    <Wallet className="w-4 h-4 text-indigo-600" />
+                  </div>
+                  <span className="text-xs font-medium text-gray-700">
+                    Contas
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => navigate("/admin/transactions")}
+                  className="flex flex-col items-center p-3 rounded-lg border border-gray-200 hover:border-pink-300 hover:bg-pink-50 transition-all duration-200"
+                >
+                  <div className="w-8 h-8 bg-pink-100 rounded-lg flex items-center justify-center mb-2">
+                    <Receipt className="w-4 h-4 text-pink-600" />
+                  </div>
+                  <span className="text-xs font-medium text-gray-700">
+                    Transações
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
