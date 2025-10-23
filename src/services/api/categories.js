@@ -1,10 +1,19 @@
-import api from '../../config/api';
+import api from "../../config/api";
 
 // Categorias - Apenas admins podem acessar
 export const categoriesApi = {
   // Listar todas as categorias
-  getCategories: async () => {
-    const response = await api.get('/categories');
+  getCategories: async (page = 1, pageSize = 10, search = "") => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      page_size: pageSize.toString(),
+    });
+
+    if (search) {
+      params.append("search", search);
+    }
+
+    const response = await api.get(`/categories?${params}`);
     return response.data;
   },
 
@@ -16,7 +25,7 @@ export const categoriesApi = {
 
   // Criar categoria
   createCategory: async (categoryData) => {
-    const response = await api.post('/category/create', categoryData);
+    const response = await api.post("/category/create", categoryData);
     return response.data;
   },
 
@@ -30,5 +39,5 @@ export const categoriesApi = {
   deleteCategory: async (categoryId) => {
     const response = await api.delete(`/category/${categoryId}`);
     return response.data;
-  }
+  },
 };
