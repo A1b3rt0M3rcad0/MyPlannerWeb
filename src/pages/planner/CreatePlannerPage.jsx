@@ -30,18 +30,15 @@ export default function CreatePlannerPage() {
     setError(null);
 
     try {
-      const response = await plannersAPI.createPlanner({
+      await plannersAPI.createUserPlanner({
         name: formData.name,
         description: formData.description,
         color: formData.color,
       });
 
-      if (response.success) {
-        await updatePlanners();
-        navigate("/planner/selection");
-      } else {
-        setError(response.error || "Erro ao criar planner");
-      }
+      // Se chegou até aqui, a criação foi bem-sucedida
+      await updatePlanners();
+      navigate("/planner/selection");
     } catch (err) {
       console.error("Erro ao criar planner:", err);
       const errorMessage =

@@ -30,7 +30,6 @@ export default function ColorWheel({
     "#F8C471", // Laranja suave
     "#82E0AA", // Verde claro
     "#F1948A", // Rosa coral
-    "#85C1E9", // Azul pastel
     "#D7BDE2", // Lilás
     "#A9DFBF", // Verde pastel
     "#F9E79F", // Amarelo pastel
