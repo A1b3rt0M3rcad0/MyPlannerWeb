@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlanner } from "../../hooks/usePlanner.jsx";
+import { plannersAPI } from "../../services/api/planners";
 import {
   Plus,
   Users,
@@ -10,6 +11,9 @@ import {
   Search,
   FolderOpen,
   Sparkles,
+  Edit,
+  Trash2,
+  MoreVertical,
 } from "lucide-react";
 
 export default function PlannerSelectionPage() {
@@ -17,6 +21,9 @@ export default function PlannerSelectionPage() {
   const { planners, selectPlanner, loading, updatePlanners } = usePlanner();
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [plannerToDelete, setPlannerToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Carrega planners quando o componente monta
   useEffect(() => {
@@ -40,6 +47,40 @@ export default function PlannerSelectionPage() {
 
   const handleCreatePlanner = () => {
     navigate("/planner/create");
+  };
+
+  const handleDeleteClick = (planner, e) => {
+    e.stopPropagation(); // Previne o clique no card
+    setPlannerToDelete(planner);
+    setShowDeleteModal(true);
+  };
+
+  const handleEditClick = (planner, e) => {
+    e.stopPropagation(); // Previne o clique no card
+    // TODO: Implementar edição
+    console.log("Editar planner:", planner);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!plannerToDelete) return;
+
+    setDeleting(true);
+    try {
+      await plannersAPI.deleteUserPlanner(plannerToDelete.id);
+      await updatePlanners(); // Recarrega a lista
+      setShowDeleteModal(false);
+      setPlannerToDelete(null);
+    } catch (error) {
+      console.error("Erro ao deletar planner:", error);
+      setError("Erro ao deletar planner. Tente novamente.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setPlannerToDelete(null);
   };
 
   const filteredPlanners = planners.filter(
@@ -218,10 +259,10 @@ export default function PlannerSelectionPage() {
                   <div
                     key={planner.id}
                     onClick={() => handleSelectPlanner(planner)}
-                    className="bg-secondary-800/50 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-primary-500/50 hover:shadow-xl hover:shadow-primary-500/10 transition-all duration-300 cursor-pointer group transform hover:-translate-y-1"
+                    className="bg-secondary-800/50 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-primary-500/50 hover:shadow-xl hover:shadow-primary-500/10 transition-all duration-300 group transform hover:-translate-y-1 relative cursor-pointer"
                   >
                     <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-1">
                         <div
                           className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg"
                           style={{ backgroundColor: planner.color }}
@@ -237,7 +278,23 @@ export default function PlannerSelectionPage() {
                           </p>
                         </div>
                       </div>
-                      <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-400 transition-colors" />
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => handleEditClick(planner, e)}
+                          className="p-2 text-gray-400 hover:text-primary-400 hover:bg-white/10 rounded-lg transition-all duration-200"
+                          title="Editar planner"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => handleDeleteClick(planner, e)}
+                          className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all duration-200"
+                          title="Deletar planner"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-400 transition-colors" />
+                      </div>
                     </div>
 
                     <p className="text-gray-300 text-sm mb-4 line-clamp-2">
@@ -280,6 +337,53 @@ export default function PlannerSelectionPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de confirmação de delete */}
+      {showDeleteModal && plannerToDelete && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-secondary-800/90 backdrop-blur-xl rounded-2xl p-8 max-w-md w-full mx-4 border border-white/10 shadow-2xl">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-500/20 border border-red-500/30 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Trash2 className="w-8 h-8 text-red-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">
+                Deletar Planner
+              </h3>
+              <p className="text-gray-300 mb-6">
+                Tem certeza que deseja deletar o planner{" "}
+                <span className="font-semibold text-white">
+                  "{plannerToDelete.name}"
+                </span>
+                ? Esta ação não pode ser desfeita e todos os dados relacionados
+                serão perdidos.
+              </p>
+              <div className="flex gap-4">
+                <button
+                  onClick={handleCancelDelete}
+                  disabled={deleting}
+                  className="flex-1 px-6 py-3 border border-white/20 text-gray-300 rounded-xl hover:bg-white/10 transition-all duration-200 disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  disabled={deleting}
+                  className="flex-1 px-6 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {deleting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Deletando...
+                    </>
+                  ) : (
+                    "Deletar"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

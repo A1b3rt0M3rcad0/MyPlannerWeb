@@ -25,6 +25,7 @@ export default function DashboardPage() {
     const storedPlanner = localStorage.getItem(
       "finplanner_v2_selected_planner"
     );
+    
     if (!storedPlanner && !selectedPlanner) {
       navigate("/planner/selection");
     }
