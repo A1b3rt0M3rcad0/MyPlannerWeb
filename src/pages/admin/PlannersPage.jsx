@@ -11,7 +11,7 @@ import {
   Palette,
   FileText,
 } from "lucide-react";
-import { plannersAPI } from "../../services/api/planners";
+import { adminPlannersApi } from "../../services/api/adminPlanners";
 import ColorWheel from "../../components/ColorWheel";
 
 export default function PlannersPage() {
@@ -33,7 +33,7 @@ export default function PlannersPage() {
     async (page = pagination.page, pageSize = pagination.pageSize) => {
       try {
         setLoading(true);
-        const response = await plannersAPI.listUserPlanners(
+        const response = await adminPlannersApi.getPlanners(
           page,
           pageSize,
           searchTerm
@@ -75,7 +75,7 @@ export default function PlannersPage() {
       try {
         setError(null);
         setSuccess(null);
-        await plannersAPI.deleteUserPlanner(plannerId);
+        await adminPlannersApi.deletePlanner(plannerId);
         setSuccess("Planner deletado com sucesso!");
         loadPlanners(pagination.page);
         setTimeout(() => setSuccess(null), 3000);
@@ -90,7 +90,7 @@ export default function PlannersPage() {
     try {
       setError(null);
       setSuccess(null);
-      await plannersAPI.createUserPlanner(plannerData);
+      await adminPlannersApi.createPlanner(plannerData);
       setSuccess("Planner criado com sucesso!");
       setShowCreateModal(false);
       loadPlanners(1);
@@ -105,7 +105,7 @@ export default function PlannersPage() {
     try {
       setError(null);
       setSuccess(null);
-      await plannersAPI.updateUserPlanner(plannerId, plannerData);
+      await adminPlannersApi.updatePlanner(plannerId, plannerData);
       setSuccess("Planner atualizado com sucesso!");
       setShowEditModal(false);
       setSelectedPlanner(null);
