@@ -24,6 +24,14 @@ export default function PlannerSelectionPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [plannerToDelete, setPlannerToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [plannerToEdit, setPlannerToEdit] = useState(null);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    description: "",
+    color: "#3B82F6",
+  });
+  const [updating, setUpdating] = useState(false);
 
   // Carrega planners quando o componente monta
   useEffect(() => {
@@ -57,8 +65,13 @@ export default function PlannerSelectionPage() {
 
   const handleEditClick = (planner, e) => {
     e.stopPropagation(); // Previne o clique no card
-    // TODO: Implementar edição
-    console.log("Editar planner:", planner);
+    setPlannerToEdit(planner);
+    setEditForm({
+      name: planner.name || "",
+      description: planner.description || "",
+      color: planner.color || "#3B82F6",
+    });
+    setShowEditModal(true);
   };
 
   const handleConfirmDelete = async () => {
@@ -81,6 +94,37 @@ export default function PlannerSelectionPage() {
   const handleCancelDelete = () => {
     setShowDeleteModal(false);
     setPlannerToDelete(null);
+  };
+
+  const handleConfirmEdit = async () => {
+    if (!plannerToEdit) return;
+
+    setUpdating(true);
+    try {
+      await plannersAPI.updateUserPlanner(plannerToEdit.id, editForm);
+      await updatePlanners(); // Recarrega a lista
+      setShowEditModal(false);
+      setPlannerToEdit(null);
+      setEditForm({ name: "", description: "", color: "#3B82F6" });
+    } catch (error) {
+      console.error("Erro ao atualizar planner:", error);
+      setError("Erro ao atualizar planner. Tente novamente.");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setShowEditModal(false);
+    setPlannerToEdit(null);
+    setEditForm({ name: "", description: "", color: "#3B82F6" });
+  };
+
+  const handleEditFormChange = (field, value) => {
+    setEditForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   };
 
   const filteredPlanners = planners.filter(
@@ -337,6 +381,109 @@ export default function PlannerSelectionPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de edição */}
+      {showEditModal && plannerToEdit && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-secondary-800/90 backdrop-blur-xl rounded-2xl p-8 max-w-md w-full mx-4 border border-white/10 shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-primary-500/20 border border-primary-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Edit className="w-8 h-8 text-primary-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">
+                Editar Planner
+              </h3>
+              <p className="text-gray-300">
+                Atualize as informações do seu planner
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {/* Nome */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Nome do Planner
+                </label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => handleEditFormChange("name", e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-white/10 rounded-xl focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 transition-all duration-200 bg-secondary-700/50 backdrop-blur-sm text-white placeholder-gray-400"
+                  placeholder="Digite o nome do planner"
+                />
+              </div>
+
+              {/* Descrição */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Descrição
+                </label>
+                <textarea
+                  value={editForm.description}
+                  onChange={(e) =>
+                    handleEditFormChange("description", e.target.value)
+                  }
+                  rows={3}
+                  className="w-full px-4 py-3 border-2 border-white/10 rounded-xl focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 transition-all duration-200 bg-secondary-700/50 backdrop-blur-sm text-white placeholder-gray-400 resize-none"
+                  placeholder="Digite uma descrição para o planner"
+                />
+              </div>
+
+              {/* Cor */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Cor do Planner
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={editForm.color}
+                    onChange={(e) =>
+                      handleEditFormChange("color", e.target.value)
+                    }
+                    className="w-12 h-12 border-2 border-white/10 rounded-xl cursor-pointer"
+                  />
+                  <div className="flex-1">
+                    <input
+                      type="text"
+                      value={editForm.color}
+                      onChange={(e) =>
+                        handleEditFormChange("color", e.target.value)
+                      }
+                      className="w-full px-4 py-3 border-2 border-white/10 rounded-xl focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 transition-all duration-200 bg-secondary-700/50 backdrop-blur-sm text-white placeholder-gray-400"
+                      placeholder="#3B82F6"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-4 mt-8">
+              <button
+                onClick={handleCancelEdit}
+                disabled={updating}
+                className="flex-1 px-6 py-3 border border-white/20 text-gray-300 rounded-xl hover:bg-white/10 transition-all duration-200 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmEdit}
+                disabled={updating || !editForm.name.trim()}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {updating ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Atualizando...
+                  </>
+                ) : (
+                  "Atualizar"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de confirmação de delete */}
       {showDeleteModal && plannerToDelete && (
