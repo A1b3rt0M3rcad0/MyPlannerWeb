@@ -1,8 +1,8 @@
 export default function Footer() {
   return (
-    <footer className="bg-white/80 backdrop-blur-md border-t border-gray-200/50">
+    <footer className="bg-secondary-900/50 backdrop-blur-md border-t border-white/10">
       <div className="px-6 py-4">
-        <div className="flex items-center justify-between text-sm text-gray-600">
+        <div className="flex items-center justify-between text-sm text-gray-300">
           <div className="flex items-center gap-4">
             <span>© 2024 FinPlanner V2</span>
             <span>•</span>

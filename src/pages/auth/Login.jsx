@@ -39,8 +39,13 @@ const Login = () => {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-secondary-900 via-secondary-800 to-secondary-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-yellow-500 mx-auto mb-4"></div>
+        {/* Background decorativo */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-primary-500 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary-600 rounded-full blur-3xl"></div>
+        </div>
+        <div className="text-center relative z-10">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary-500 mx-auto mb-4"></div>
           <p className="text-white text-lg">Verificando autenticação...</p>
         </div>
       </div>
@@ -99,14 +104,20 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-primary-600 via-primary-700 to-primary-800 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-secondary-900 via-secondary-800 to-secondary-900 flex items-center justify-center p-4">
+      {/* Background decorativo */}
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary-500 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary-600 rounded-full blur-3xl"></div>
+      </div>
+      
+      <div className="w-full max-w-md relative z-10">
         {/* Card de Login */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 p-8">
+        <div className="bg-secondary-800/50 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/10 p-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-linear-to-br from-primary-400 to-primary-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
-              <Lock className="w-8 h-8 text-white" />
+            <div className="w-16 h-16 bg-gradient-to-br from-primary-400 to-primary-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
+              <Lock className="w-8 h-8 text-secondary-900" />
             </div>
             <h1 className="text-2xl font-bold text-white mb-2">
               Entrar na sua conta
@@ -129,7 +140,7 @@ const Login = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  className="w-full pl-10 pr-4 py-3 bg-secondary-800/50 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500/50 transition-all backdrop-blur-sm"
                   placeholder="seu@email.com"
                   required
                 />
@@ -149,7 +160,7 @@ const Login = () => {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  className="w-full pl-10 pr-12 py-3 bg-secondary-800/50 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500/50 transition-all backdrop-blur-sm"
                   placeholder="Sua senha"
                   required
                 />
@@ -178,7 +189,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-linear-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="w-full bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-secondary-900 font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 hover:shadow-lg hover:shadow-primary-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               {loading ? "Entrando..." : "Entrar"}
             </button>
@@ -188,7 +199,7 @@ const Login = () => {
           <div className="mt-6 text-center space-y-4">
             <Link
               to={ROUTES.ADMIN_LOGIN}
-              className="text-primary-300 hover:text-primary-200 text-sm transition-colors"
+              className="text-primary-400 hover:text-primary-300 text-sm transition-colors"
             >
               Acesso administrativo
             </Link>
@@ -196,7 +207,7 @@ const Login = () => {
               Não tem uma conta?{" "}
               <Link
                 to={ROUTES.REGISTER}
-                className="text-primary-300 hover:text-primary-200 transition-colors"
+                className="text-primary-400 hover:text-primary-300 transition-colors"
               >
                 Cadastre-se
               </Link>
@@ -208,7 +219,7 @@ const Login = () => {
         <div className="text-center mt-6">
           <Link
             to={ROUTES.HOME}
-            className="inline-flex items-center gap-2 text-gray-300 hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-gray-300 hover:text-primary-400 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Voltar ao início

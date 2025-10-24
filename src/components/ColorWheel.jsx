@@ -15,20 +15,30 @@ export default function ColorWheel({
     y: size / 2,
   });
 
-  // Cores predefinidas
+  // Cores predefinidas - cores mais vibrantes e visíveis
   const presetColors = [
-    "#3B82F6",
-    "#EF4444",
-    "#10B981",
-    "#F59E0B",
-    "#8B5CF6",
-    "#EC4899",
-    "#06B6D4",
-    "#84CC16",
-    "#F97316",
-    "#6366F1",
-    "#14B8A6",
-    "#EAB308",
+    "#FF6B6B", // Vermelho vibrante
+    "#4ECDC4", // Turquesa
+    "#45B7D1", // Azul claro
+    "#96CEB4", // Verde menta
+    "#FFEAA7", // Amarelo suave
+    "#DDA0DD", // Roxo claro
+    "#98D8C8", // Verde água
+    "#F7DC6F", // Amarelo dourado
+    "#BB8FCE", // Lavanda
+    "#85C1E9", // Azul céu
+    "#F8C471", // Laranja suave
+    "#82E0AA", // Verde claro
+    "#F1948A", // Rosa coral
+    "#85C1E9", // Azul pastel
+    "#D7BDE2", // Lilás
+    "#A9DFBF", // Verde pastel
+    "#F9E79F", // Amarelo pastel
+    "#D5DBDB", // Cinza claro
+    "#FADBD8", // Rosa pastel
+    "#D5E8D4", // Verde pastel
+    "#D6EAF8", // Azul pastel
+    "#FAD7A0", // Laranja pastel
   ];
 
   // Função para converter HSL para RGB
@@ -173,13 +183,20 @@ export default function ColorWheel({
       }
     }
 
-    // Desenhar círculo central (branco)
+    // Desenhar círculo central (branco com melhor contraste)
     ctx.beginPath();
-    ctx.arc(centerX, centerY, 10, 0, 2 * Math.PI);
+    ctx.arc(centerX, centerY, 12, 0, 2 * Math.PI);
     ctx.fillStyle = "#ffffff";
     ctx.fill();
-    ctx.strokeStyle = "#e5e7eb";
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#374151";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Adicionar sombra interna
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 10, 0, 2 * Math.PI);
+    ctx.strokeStyle = "#f3f4f6";
+    ctx.lineWidth = 1;
     ctx.stroke();
   };
 
@@ -252,7 +269,7 @@ export default function ColorWheel({
           ref={canvasRef}
           width={size}
           height={size}
-          className="cursor-crosshair rounded-full shadow-lg border-2 border-gray-200"
+          className="cursor-crosshair rounded-full shadow-2xl border-4 border-white/20 hover:border-primary-500/50 transition-all duration-200"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
@@ -260,7 +277,7 @@ export default function ColorWheel({
         />
         {/* Indicador de cor selecionada */}
         <div
-          className="absolute w-6 h-6 rounded-full border-2 border-white shadow-lg pointer-events-none"
+          className="absolute w-8 h-8 rounded-full border-4 border-white shadow-2xl pointer-events-none ring-2 ring-primary-500/50"
           style={{
             backgroundColor: selectedColor,
             left: `${indicatorPosition.x}px`,
@@ -271,7 +288,7 @@ export default function ColorWheel({
       </div>
 
       {/* Input de cor manual */}
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center space-x-4">
         <input
           type="color"
           value={selectedColor}
@@ -281,9 +298,9 @@ export default function ColorWheel({
             setIndicatorPosition(position);
             onChange?.(e.target.value);
           }}
-          className="w-12 h-12 rounded-lg border-2 border-gray-300 cursor-pointer"
+          className="w-16 h-16 rounded-2xl border-4 border-white/20 cursor-pointer shadow-lg hover:border-primary-500/50 transition-all duration-200"
         />
-        <div className="text-sm text-gray-600 font-mono">
+        <div className="text-sm text-white font-mono bg-secondary-800/50 px-3 py-2 rounded-lg border border-white/10">
           {selectedColor.toUpperCase()}
         </div>
       </div>
@@ -291,19 +308,19 @@ export default function ColorWheel({
       {/* Cores predefinidas */}
       {showPresets && (
         <div className="w-full">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-200 mb-4">
             Cores Predefinidas
           </label>
-          <div className="grid grid-cols-6 gap-2">
+          <div className="grid grid-cols-8 gap-3">
             {presetColors.map((color) => (
               <button
                 key={color}
                 type="button"
                 onClick={() => handlePresetClick(color)}
-                className={`w-8 h-8 rounded-lg border-2 transition-all duration-200 ${
+                className={`w-12 h-12 rounded-2xl border-4 transition-all duration-200 shadow-lg hover:scale-110 transform ${
                   selectedColor === color
-                    ? "border-gray-800 ring-2 ring-gray-300"
-                    : "border-gray-300 hover:border-gray-400"
+                    ? "border-white ring-4 ring-primary-500/50 shadow-2xl"
+                    : "border-white/20 hover:border-primary-500/50 hover:shadow-xl"
                 }`}
                 style={{ backgroundColor: color }}
                 title={color}

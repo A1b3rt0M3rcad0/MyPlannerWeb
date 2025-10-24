@@ -31,9 +31,14 @@ export default function AdminLogin() {
   // Mostra loading enquanto verifica autenticação
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-yellow-500 mx-auto mb-4"></div>
+      <div className="min-h-screen bg-gradient-to-br from-secondary-900 via-secondary-800 to-secondary-900 flex items-center justify-center">
+        {/* Background decorativo */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-primary-500 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary-600 rounded-full blur-3xl"></div>
+        </div>
+        <div className="text-center relative z-10">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary-500 mx-auto mb-4"></div>
           <p className="text-white text-lg">Verificando autenticação...</p>
         </div>
       </div>
@@ -92,9 +97,9 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-secondary-900 via-secondary-800 to-secondary-900 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-secondary-900 via-secondary-800 to-secondary-900 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background decorativo */}
-      <div className="absolute inset-0 opacity-10">
+      <div className="absolute inset-0 opacity-20">
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary-500 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary-600 rounded-full blur-3xl"></div>
       </div>
@@ -102,21 +107,21 @@ export default function AdminLogin() {
       <div className="max-w-md w-full relative z-10">
         {/* Logo e título */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-linear-to-br from-primary-500 to-primary-600 rounded-2xl shadow-2xl shadow-primary-500/50 mb-4">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl shadow-2xl shadow-primary-500/50 mb-4">
             <Shield className="w-12 h-12 text-secondary-900" />
           </div>
           <h1 className="text-4xl font-bold text-white mb-2">FinPlanner</h1>
-          <p className="text-primary-300">Sistema de Acesso</p>
+          <p className="text-primary-400">Sistema de Acesso</p>
         </div>
 
         {/* Card de login */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">
+        <div className="bg-secondary-800/50 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/10 p-8">
+          <h2 className="text-2xl font-bold text-white mb-6">
             Acesso ao Sistema
           </h2>
 
           {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-800">
+            <div className="mb-4 p-4 bg-red-500/20 border border-red-500/30 rounded-lg flex items-center gap-2 text-red-200">
               <AlertCircle size={20} />
               <span className="text-sm">{error}</span>
             </div>
@@ -125,7 +130,7 @@ export default function AdminLogin() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-200 mb-2">
                 Email
               </label>
               <div className="relative">
@@ -137,7 +142,7 @@ export default function AdminLogin() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-3 bg-secondary-800/50 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500/50 outline-none transition-all backdrop-blur-sm"
                   placeholder="seu@email.com"
                   required
                 />
@@ -146,7 +151,7 @@ export default function AdminLogin() {
 
             {/* Senha */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-200 mb-2">
                 Senha
               </label>
               <div className="relative">
@@ -158,7 +163,7 @@ export default function AdminLogin() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-3 bg-secondary-800/50 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500/50 outline-none transition-all backdrop-blur-sm"
                   placeholder="••••••••"
                   required
                 />
@@ -169,7 +174,7 @@ export default function AdminLogin() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-linear-to-r from-primary-500 to-primary-600 text-secondary-900 font-bold rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-lg hover:shadow-xl hover:shadow-primary-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-secondary-900 font-bold rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-lg hover:shadow-xl hover:shadow-primary-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Entrando..." : "Acessar Sistema"}
             </button>
@@ -180,7 +185,7 @@ export default function AdminLogin() {
         <div className="text-center mt-6">
           <Link
             to={ROUTES.HOME}
-            className="text-gray-400 hover:text-white transition-colors text-sm"
+            className="text-gray-300 hover:text-primary-400 transition-colors text-sm"
           >
             ← Voltar para home
           </Link>

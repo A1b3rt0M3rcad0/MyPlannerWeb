@@ -31,7 +31,7 @@ export default function SideBar() {
   const colors = usePlannerColor();
 
   return (
-    <aside className="w-64 bg-white/90 backdrop-blur-md border-r border-gray-200/50 shadow-sm">
+    <aside className="w-64 bg-secondary-800/50 backdrop-blur-md border-r border-white/10 shadow-sm">
       <div className="p-6">
         {/* Logo */}
         <div className="flex items-center gap-3 mb-8">
@@ -39,11 +39,11 @@ export default function SideBar() {
             className="w-10 h-10 rounded-xl flex items-center justify-center"
             style={{ backgroundColor: colors.primary }}
           >
-            <span className="text-white font-bold text-lg">FP</span>
+            <span className="text-secondary-900 font-bold text-lg">FP</span>
           </div>
           <div>
-            <h2 className="text-lg font-bold text-gray-800">FinPlanner</h2>
-            <p className="text-xs text-gray-500">V2</p>
+            <h2 className="text-lg font-bold text-white">FinPlanner</h2>
+            <p className="text-xs text-gray-300">V2</p>
           </div>
         </div>
 
@@ -59,8 +59,8 @@ export default function SideBar() {
                 to={item.path}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                   isActive
-                    ? "text-white shadow-lg"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
+                    ? "text-secondary-900 shadow-lg"
+                    : "text-gray-300 hover:bg-white/10 hover:text-white"
                 }`}
                 style={isActive ? { backgroundColor: colors.primary } : {}}
               >
@@ -73,22 +73,18 @@ export default function SideBar() {
 
         {/* Resumo rápido */}
         <div 
-          className="mt-8 p-4 rounded-xl border"
-          style={{ 
-            backgroundColor: `${colors.primary}10`,
-            borderColor: `${colors.primary}30`
-          }}
+          className="mt-8 p-4 rounded-xl border border-white/10 bg-white/5"
         >
-          <h3 className="text-sm font-semibold text-gray-800 mb-2">
+          <h3 className="text-sm font-semibold text-white mb-2">
             Resumo Rápido
           </h3>
           <div className="space-y-2 text-xs">
             <div className="flex justify-between">
-              <span className="text-gray-600">Saldo Total:</span>
-              <span className="font-semibold text-green-600">R$ 12.450,00</span>
+              <span className="text-gray-300">Saldo Total:</span>
+              <span className="font-semibold text-green-400">R$ 12.450,00</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Receitas:</span>
+              <span className="text-gray-300">Receitas:</span>
               <span 
                 className="font-semibold"
                 style={{ color: colors.primary }}
@@ -97,8 +93,8 @@ export default function SideBar() {
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Despesas:</span>
-              <span className="font-semibold text-red-600">R$ 3.200,00</span>
+              <span className="text-gray-300">Despesas:</span>
+              <span className="font-semibold text-red-400">R$ 3.200,00</span>
             </div>
           </div>
         </div>
