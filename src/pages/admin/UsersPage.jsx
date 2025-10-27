@@ -13,8 +13,11 @@ import {
   Calendar,
 } from "lucide-react";
 import { usersApi } from "../../services/api/users";
+import { useConfirmation } from "../../hooks/useConfirmation";
+import ConfirmationModal from "../../components/ConfirmationModal";
 
 export default function UsersPage() {
+  const { showConfirmation, confirmation } = useConfirmation();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -80,20 +83,28 @@ export default function UsersPage() {
   );
 
   const handleDeleteUser = async (userId) => {
-    if (window.confirm("Tem certeza que deseja deletar este usuário?")) {
-      try {
-        setError(null);
-        setSuccess(null);
-        await usersApi.deleteUser(userId);
-        setSuccess("Usuário deletado com sucesso!");
-        loadUsers(pagination.page); // Manter página atual
-        // Limpar mensagem de sucesso após 3 segundos
-        setTimeout(() => setSuccess(null), 3000);
-      } catch (error) {
-        console.error("Erro ao deletar usuário:", error);
-        setError(error.response?.data?.message || "Erro ao deletar usuário");
-      }
-    }
+    showConfirmation({
+      title: "Confirmar Exclusão",
+      message:
+        "Tem certeza que deseja deletar este usuário? Esta ação não pode ser desfeita.",
+      confirmText: "Deletar",
+      cancelText: "Cancelar",
+      type: "danger",
+      onConfirm: async () => {
+        try {
+          setError(null);
+          setSuccess(null);
+          await usersApi.deleteUser(userId);
+          setSuccess("Usuário deletado com sucesso!");
+          loadUsers(pagination.page); // Manter página atual
+          // Limpar mensagem de sucesso após 3 segundos
+          setTimeout(() => setSuccess(null), 3000);
+        } catch (error) {
+          console.error("Erro ao deletar usuário:", error);
+          setError(error.response?.data?.message || "Erro ao deletar usuário");
+        }
+      },
+    });
   };
 
   const handleCreateUser = async (userData) => {
@@ -432,6 +443,19 @@ export default function UsersPage() {
           onSubmit={(userData) => handleUpdateUser(selectedUser.id, userData)}
         />
       )}
+
+      {/* Modal de confirmação global */}
+      <ConfirmationModal
+        isOpen={confirmation.isOpen}
+        onClose={confirmation.onCancel}
+        onConfirm={confirmation.onConfirm}
+        title={confirmation.title}
+        message={confirmation.message}
+        confirmText={confirmation.confirmText}
+        cancelText={confirmation.cancelText}
+        type={confirmation.type}
+        isLoading={confirmation.isLoading}
+      />
     </div>
   );
 }

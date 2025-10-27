@@ -1,4 +1,10 @@
-import { createContext, useState, useEffect, useCallback } from "react";
+import {
+  createContext,
+  useState,
+  useEffect,
+  useCallback,
+  useContext,
+} from "react";
 import { useNavigate } from "react-router-dom";
 
 export const AuthContext = createContext({});
@@ -12,8 +18,8 @@ export function AuthProvider({ children }) {
   // Chaves do localStorage
   const AUTH_CONFIG = {
     ACCESS_TOKEN_KEY: "finplanner_v2_access_token",
-    REFRESH_TOKEN_KEY: "finplanner_v2_refresh_token", 
-    USER_INFO_KEY: "finplanner_v2_user_info"
+    REFRESH_TOKEN_KEY: "finplanner_v2_refresh_token",
+    USER_INFO_KEY: "finplanner_v2_user_info",
   };
 
   // Verifica se o token é válido (decodifica JWT sem verificar assinatura)
@@ -207,7 +213,7 @@ export function AuthProvider({ children }) {
 
     window.addEventListener("auth-error", handleAuthError);
     window.addEventListener("token-updated", handleTokenUpdate);
-    
+
     return () => {
       window.removeEventListener("auth-error", handleAuthError);
       window.removeEventListener("token-updated", handleTokenUpdate);
@@ -232,8 +238,17 @@ export function AuthProvider({ children }) {
     checkAuth,
     updateAccessToken,
     updateUserInfo,
-    AUTH_CONFIG
+    AUTH_CONFIG,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
+
+// Hook para usar o contexto de autenticação
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
+  }
+  return context;
+};

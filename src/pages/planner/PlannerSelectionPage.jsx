@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlanner } from "../../hooks/usePlanner.jsx";
+import { useAuth } from "../../contexts/AuthContext";
+import { useConfirmation } from "../../hooks/useConfirmation";
+import ConfirmationModal from "../../components/ConfirmationModal";
 import { plannersAPI } from "../../services/api/planners";
 import {
   Plus,
@@ -14,11 +17,15 @@ import {
   Edit,
   Trash2,
   MoreVertical,
+  LogOut,
 } from "lucide-react";
 
 export default function PlannerSelectionPage() {
   const navigate = useNavigate();
   const { planners, selectPlanner, loading, updatePlanners } = usePlanner();
+  const { logout } = useAuth();
+  const { confirmation, showConfirmation, hideConfirmation } =
+    useConfirmation();
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -127,6 +134,20 @@ export default function PlannerSelectionPage() {
     }));
   };
 
+  const handleLogout = () => {
+    showConfirmation({
+      title: "Confirmar Logout",
+      message:
+        "Tem certeza que deseja sair da sua conta? Você será redirecionado para a página de login.",
+      confirmText: "Sair",
+      cancelText: "Cancelar",
+      type: "warning",
+      onConfirm: () => {
+        logout();
+      },
+    });
+  };
+
   const filteredPlanners = planners.filter(
     (planner) =>
       planner.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -225,9 +246,10 @@ export default function PlannerSelectionPage() {
               </div>
             </div>
             <button
-              onClick={() => navigate("/")}
-              className="px-4 py-2 text-gray-300 hover:text-primary-400 hover:bg-white/10 rounded-xl transition-all duration-200"
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200"
             >
+              <LogOut className="w-4 h-4" />
               Sair
             </button>
           </div>
@@ -531,6 +553,19 @@ export default function PlannerSelectionPage() {
           </div>
         </div>
       )}
+
+      {/* Modal de confirmação global */}
+      <ConfirmationModal
+        isOpen={confirmation.isOpen}
+        onClose={confirmation.onCancel}
+        onConfirm={confirmation.onConfirm}
+        title={confirmation.title}
+        message={confirmation.message}
+        confirmText={confirmation.confirmText}
+        cancelText={confirmation.cancelText}
+        type={confirmation.type}
+        isLoading={confirmation.isLoading}
+      />
     </div>
   );
 }

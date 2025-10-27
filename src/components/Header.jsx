@@ -12,9 +12,13 @@ import {
 import { useNavigate } from "react-router-dom";
 import { usePlanner } from "../hooks/usePlanner.jsx";
 import { usePlannerColor } from "../hooks/usePlannerColor.js";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../contexts/AuthContext";
 
-export default function Header({ pageTitle, showPlannerSelector = false }) {
+export default function Header({
+  pageTitle,
+  showPlannerSelector = false,
+  showConfirmation,
+}) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
@@ -36,9 +40,17 @@ export default function Header({ pageTitle, showPlannerSelector = false }) {
   };
 
   const handleLogout = () => {
-    if (window.confirm("Tem certeza que deseja sair?")) {
-      logout();
-    }
+    showConfirmation({
+      title: "Confirmar Logout",
+      message:
+        "Tem certeza que deseja sair da sua conta? Você será redirecionado para a página de login.",
+      confirmText: "Sair",
+      cancelText: "Cancelar",
+      type: "warning",
+      onConfirm: () => {
+        logout();
+      },
+    });
   };
 
   const getPlannerIcon = (type) => {
