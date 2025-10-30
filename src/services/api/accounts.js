@@ -1,4 +1,4 @@
-import api from '../../config/api';
+import api from "../../config/api";
 
 // Contas - Apenas admins podem acessar
 export const accountsApi = {
@@ -25,7 +25,7 @@ export const accountsApi = {
 
   // Criar conta
   createAccount: async (accountData) => {
-    const response = await api.post('/account/create', accountData);
+    const response = await api.post("/account/create", accountData);
     return response.data;
   },
 
@@ -39,5 +39,38 @@ export const accountsApi = {
   deleteAccount: async (accountId) => {
     const response = await api.delete(`/account/${accountId}`);
     return response.data;
-  }
+  },
+};
+
+// Contas do usuário autenticado
+export const userAccountsApi = {
+  getAccounts: async (page = 1, pageSize = 10, search = "") => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      page_size: pageSize.toString(),
+    });
+    if (search) params.append("search", search);
+    const response = await api.get(`/my/accounts?${params}`);
+    return response.data;
+  },
+
+  getAccountById: async (accountId) => {
+    const response = await api.get(`/my/account/${accountId}`);
+    return response.data;
+  },
+
+  createAccount: async (accountData) => {
+    const response = await api.post("/my/account/create", accountData);
+    return response.data;
+  },
+
+  updateAccount: async (accountId, accountData) => {
+    const response = await api.put(`/my/account/${accountId}`, accountData);
+    return response.data;
+  },
+
+  deleteAccount: async (accountId) => {
+    const response = await api.delete(`/my/account/${accountId}`);
+    return response.data;
+  },
 };

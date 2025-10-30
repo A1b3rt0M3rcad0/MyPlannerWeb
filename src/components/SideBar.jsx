@@ -13,13 +13,13 @@ import { usePlannerColor } from "../hooks/usePlannerColor.js";
 
 const menuItems = [
   { icon: Home, label: "Dashboard", path: "/dashboard" },
-  { icon: PieChart, label: "Orçamentos", path: "/budgets" },
+  { icon: PieChart, label: "Orçamentos", path: "/coming-soon" },
   { icon: CreditCard, label: "Transações", path: "/transactions" },
-  { icon: Wallet, label: "Carteiras", path: "/wallets" },
+  { icon: Wallet, label: "Carteiras", path: "/coming-soon" },
   { icon: Tag, label: "Categorias", path: "/categories" },
-  { icon: Target, label: "Metas", path: "/goals" },
-  { icon: Users, label: "Membros", path: "/members" },
-  { icon: Settings, label: "Configurações", path: "/settings" },
+  { icon: Target, label: "Metas", path: "/coming-soon" },
+  { icon: Users, label: "Membros", path: "/coming-soon" },
+  { icon: Settings, label: "Configurações", path: "/coming-soon" },
 ];
 
 export default function SideBar() {
@@ -51,7 +51,7 @@ export default function SideBar() {
 
             return (
               <Link
-                key={item.path}
+                key={`${item.path}-${item.label}`}
                 to={item.path}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                   isActive

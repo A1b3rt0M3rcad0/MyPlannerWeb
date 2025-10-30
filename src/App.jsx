@@ -10,6 +10,7 @@ import CreatePlannerPage from "./pages/planner/CreatePlannerPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import ComingSoonPage from "./pages/ComingSoon";
 import CategoriesPage from "./pages/categories/CategoriesPage";
+import TransactionsPage from "./pages/transactions/TransactionsPage";
 import AdminRoutes from "./pages/admin/AdminRoutes";
 import { ROUTES } from "./config/constants";
 
@@ -47,6 +48,22 @@ function App() {
           />
           <Route
             path="/budgets"
+            element={
+              <ProtectedRoute>
+                <ComingSoonPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/transactions"
+            element={
+              <ProtectedRoute>
+                <TransactionsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/coming-soon"
             element={
               <ProtectedRoute>
                 <ComingSoonPage />

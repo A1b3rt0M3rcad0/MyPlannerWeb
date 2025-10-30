@@ -8,9 +8,6 @@ const API_BASE_URL = ENV.API_URL;
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 // Interceptor para adicionar token nas requisições
@@ -26,6 +23,7 @@ api.interceptors.request.use(
       hasRefreshToken: !!refreshToken,
     });
 
+    if (!config.headers) config.headers = {};
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
       console.log("✅ Authorization header adicionado");
@@ -41,6 +39,13 @@ api.interceptors.request.use(
 
     // Para requisições GET: usar query parameter
     if (config.method?.toLowerCase() === "get") {
+      // Evita enviar Content-Type em GET (reduz chances de preflight mal configurado)
+      try {
+        if (config.headers && config.headers["Content-Type"]) {
+          delete config.headers["Content-Type"];
+          console.log("🧹 Removido Content-Type do GET");
+        }
+      } catch {}
       console.log("📤 Adicionando refresh_token como query parameter (GET)");
       config.params = {
         ...(config.params || {}),
@@ -55,6 +60,10 @@ api.interceptors.request.use(
         refresh_token: refreshToken,
       };
       console.log("✅ refresh_token FORÇADO no body:", config.data);
+      // Garante Content-Type correto para métodos com body
+      if (!config.headers["Content-Type"]) {
+        config.headers["Content-Type"] = "application/json";
+      }
     }
 
     console.log("📤 Configuração final:", {
