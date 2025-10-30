@@ -17,7 +17,7 @@ const menuItems = [
   { icon: CreditCard, label: "Transações", path: "/transactions" },
   { icon: Wallet, label: "Contas", path: "/accounts" },
   { icon: Tag, label: "Categorias", path: "/categories" },
-  { icon: Target, label: "Metas", path: "/coming-soon" },
+  { icon: Target, label: "Metas", path: "/goals" },
   { icon: Users, label: "Membros", path: "/coming-soon" },
   { icon: Settings, label: "Configurações", path: "/coming-soon" },
 ];
