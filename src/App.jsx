@@ -60,6 +60,14 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/categories"
+            element={
+              <ProtectedRoute>
+                <ComingSoonPage />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </PlannerProvider>
     </AuthProvider>

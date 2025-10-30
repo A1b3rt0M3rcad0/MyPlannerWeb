@@ -6,6 +6,7 @@ import {
   Wallet,
   Target,
   Users,
+  Tag,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { usePlannerColor } from "../hooks/usePlannerColor.js";
@@ -15,6 +16,7 @@ const menuItems = [
   { icon: PieChart, label: "Orçamentos", path: "/budgets" },
   { icon: CreditCard, label: "Transações", path: "/transactions" },
   { icon: Wallet, label: "Carteiras", path: "/wallets" },
+  { icon: Tag, label: "Categorias", path: "/categories" },
   { icon: Target, label: "Metas", path: "/goals" },
   { icon: Users, label: "Membros", path: "/members" },
   { icon: Settings, label: "Configurações", path: "/settings" },
