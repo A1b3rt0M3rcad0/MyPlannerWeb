@@ -1,28 +1,22 @@
 import {
   Home,
-  DollarSign,
   PieChart,
   CreditCard,
-  TrendingUp,
-  FileText,
   Settings,
-  BarChart3,
   Wallet,
   Target,
+  Users,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { usePlannerColor } from "../hooks/usePlannerColor.js";
 
 const menuItems = [
   { icon: Home, label: "Dashboard", path: "/dashboard" },
-  { icon: DollarSign, label: "Finanças", path: "/finances" },
   { icon: PieChart, label: "Orçamentos", path: "/budgets" },
   { icon: CreditCard, label: "Transações", path: "/transactions" },
-  { icon: TrendingUp, label: "Investimentos", path: "/investments" },
-  { icon: BarChart3, label: "Relatórios", path: "/reports" },
   { icon: Wallet, label: "Carteiras", path: "/wallets" },
   { icon: Target, label: "Metas", path: "/goals" },
-  { icon: FileText, label: "Documentos", path: "/documents" },
+  { icon: Users, label: "Membros", path: "/members" },
   { icon: Settings, label: "Configurações", path: "/settings" },
 ];
 
@@ -35,7 +29,7 @@ export default function SideBar() {
       <div className="p-6">
         {/* Logo */}
         <div className="flex items-center gap-3 mb-8">
-          <div 
+          <div
             className="w-10 h-10 rounded-xl flex items-center justify-center"
             style={{ backgroundColor: colors.primary }}
           >
@@ -70,34 +64,6 @@ export default function SideBar() {
             );
           })}
         </nav>
-
-        {/* Resumo rápido */}
-        <div 
-          className="mt-8 p-4 rounded-xl border border-white/10 bg-white/5"
-        >
-          <h3 className="text-sm font-semibold text-white mb-2">
-            Resumo Rápido
-          </h3>
-          <div className="space-y-2 text-xs">
-            <div className="flex justify-between">
-              <span className="text-gray-300">Saldo Total:</span>
-              <span className="font-semibold text-green-400">R$ 12.450,00</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-300">Receitas:</span>
-              <span 
-                className="font-semibold"
-                style={{ color: colors.primary }}
-              >
-                R$ 8.500,00
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-300">Despesas:</span>
-              <span className="font-semibold text-red-400">R$ 3.200,00</span>
-            </div>
-          </div>
-        </div>
       </div>
     </aside>
   );
