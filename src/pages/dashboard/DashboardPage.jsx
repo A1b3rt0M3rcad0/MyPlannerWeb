@@ -154,7 +154,7 @@ export default function DashboardPage() {
       pageTitle={selectedPlanner ? selectedPlanner.name : "Dashboard"}
       showPlannerSelector={true}
     >
-      <div className="space-y-6">
+      <div className="space-y-6 animate-dashboard-enter">
         {/* Filtro de período (mês) - controles mais atrativos */}
         <div className="flex items-center justify-end gap-2">
           <button
@@ -231,7 +231,7 @@ export default function DashboardPage() {
         )}
 
         {/* Cards de Resumo */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 dashboard-stagger">
           <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg">
             <div className="flex items-center justify-between">
               <div>
@@ -310,7 +310,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Gráficos e Análises */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 dashboard-stagger">
           {/* Gastos por Categoria */}
           <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg">
             <div className="flex items-center justify-between mb-6">
@@ -398,7 +398,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Transações Recentes */}
-        <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg">
+        <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg dashboard-stagger">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-white">
               Transações Recentes

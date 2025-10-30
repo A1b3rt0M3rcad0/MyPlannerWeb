@@ -39,3 +39,128 @@
   --color-gold-dark: #f59e0b;
 }
 
+/* Dashboard mount animations */
+.animate-dashboard-enter {
+  animation: dashboard-fade-in 800ms ease-out both;
+}
+
+.dashboard-stagger > * {
+  opacity: 0;
+  transform: translateY(12px) scale(0.98);
+  filter: blur(6px);
+  animation: dashboard-item-in 700ms ease-out forwards;
+}
+
+.dashboard-stagger > *:nth-child(1) {
+  animation-delay: 120ms;
+}
+.dashboard-stagger > *:nth-child(2) {
+  animation-delay: 220ms;
+}
+.dashboard-stagger > *:nth-child(3) {
+  animation-delay: 320ms;
+}
+.dashboard-stagger > *:nth-child(4) {
+  animation-delay: 420ms;
+}
+.dashboard-stagger > *:nth-child(5) {
+  animation-delay: 520ms;
+}
+.dashboard-stagger > *:nth-child(6) {
+  animation-delay: 620ms;
+}
+
+@keyframes dashboard-fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+    filter: blur(8px);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(0) scale(1.002);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes dashboard-item-in {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+/* Slower variants for planner selection */
+.animate-dashboard-enter-slow {
+  animation: dashboard-fade-in-slow 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.dashboard-stagger-slow > * {
+  opacity: 0;
+  transform: translateY(20px) scale(0.975);
+  filter: blur(12px);
+  will-change: transform, opacity, filter;
+  animation: dashboard-item-in-slow 1100ms cubic-bezier(0.16, 1, 0.3, 1)
+    forwards;
+}
+
+.dashboard-stagger-slow > *:nth-child(1) {
+  animation-delay: 250ms;
+}
+.dashboard-stagger-slow > *:nth-child(2) {
+  animation-delay: 450ms;
+}
+.dashboard-stagger-slow > *:nth-child(3) {
+  animation-delay: 650ms;
+}
+.dashboard-stagger-slow > *:nth-child(4) {
+  animation-delay: 850ms;
+}
+.dashboard-stagger-slow > *:nth-child(5) {
+  animation-delay: 1050ms;
+}
+.dashboard-stagger-slow > *:nth-child(6) {
+  animation-delay: 1250ms;
+}
+
+@keyframes dashboard-fade-in-slow {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.975);
+    filter: blur(12px);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(0) scale(1.002);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes dashboard-item-in-slow {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.975);
+    filter: blur(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}

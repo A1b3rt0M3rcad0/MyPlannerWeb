@@ -146,7 +146,7 @@ export default function AccountsPage() {
 
   return (
     <BasePage pageTitle="Contas" showPlannerSelector={true}>
-      <div className="space-y-6">
+      <div className="space-y-6 animate-dashboard-enter-slow">
         {/* Barra de ações */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <form onSubmit={onSubmitSearch} className="flex-1">
@@ -309,7 +309,7 @@ export default function AccountsPage() {
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-white/10">
+            <div className="divide-y divide-white/10 dashboard-stagger-slow">
               {items.map((acc) => {
                 const id = Number(acc.id ?? acc.account_id);
                 const isEditing = editingId === id;

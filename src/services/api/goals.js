@@ -41,4 +41,42 @@ export const userGoalsApi = {
     const response = await api.post("/my/goal/create", payload);
     return response.data;
   },
+  getUserGoals: async (page = 1, pageSize = 20, search = "") => {
+    const response = await api.get("/my/goals", {
+      params: { page, page_size: pageSize, search: search || undefined },
+    });
+    return response.data;
+  },
+  getGoalsByPlannerId: async (
+    plannerId,
+    page = 1,
+    pageSize = 20,
+    search = ""
+  ) => {
+    const response = await api.get(`/my/planner/${Number(plannerId)}/goals`, {
+      params: { page, page_size: pageSize, search: search || undefined },
+    });
+    return response.data;
+  },
+  updateGoal: async (
+    goalId,
+    { name, targetAmount, targetDate, color, priority }
+  ) => {
+    const payload = {
+      name: name?.trim(),
+      target_amount:
+        typeof targetAmount === "number" ? targetAmount : Number(targetAmount),
+      target_date: targetDate || undefined,
+      color: color || undefined,
+      priority: priority ? String(priority).toLowerCase() : undefined,
+    };
+    const response = await api.put(`/my/goal/${Number(goalId)}`, payload);
+    return response.data;
+  },
+  deleteGoal: async (goalId, accountId) => {
+    const response = await api.delete(`/my/goal/${Number(goalId)}`, {
+      data: accountId ? { account_id: Number(accountId) } : {},
+    });
+    return response.data;
+  },
 };

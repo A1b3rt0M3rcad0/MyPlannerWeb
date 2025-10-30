@@ -162,27 +162,6 @@ export default function PlannerSelectionPage() {
     return "Planner";
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-secondary-900 via-secondary-800 to-secondary-900 flex items-center justify-center">
-        {/* Background decorativo */}
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-primary-500 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary-600 rounded-full blur-3xl"></div>
-        </div>
-        <div className="text-center relative z-10">
-          <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-secondary-900 border-t-transparent"></div>
-          </div>
-          <h3 className="text-lg font-semibold text-white mb-2">
-            Carregando planners...
-          </h3>
-          <p className="text-gray-300">Aguarde um momento</p>
-        </div>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-secondary-900 via-secondary-800 to-secondary-900 flex items-center justify-center">
@@ -256,7 +235,7 @@ export default function PlannerSelectionPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10 animate-dashboard-enter-slow">
         {/* Card principal com glassmorphism */}
         <div className="bg-secondary-800/50 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/10 overflow-hidden mb-8">
           {/* Header do card */}
@@ -294,7 +273,35 @@ export default function PlannerSelectionPage() {
             </div>
 
             {/* Grid de planners */}
-            {filteredPlanners.length === 0 ? (
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 dashboard-stagger-slow">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-secondary-800/50 backdrop-blur-sm rounded-2xl p-6 border border-white/10 shadow-lg animate-pulse"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="w-12 h-12 rounded-2xl bg-white/10" />
+                        <div className="space-y-2 w-2/3">
+                          <div className="h-4 bg-white/10 rounded w-3/4" />
+                          <div className="h-3 bg-white/10 rounded w-1/2" />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-white/10" />
+                        <div className="w-8 h-8 rounded-lg bg-white/10" />
+                        <div className="w-5 h-5 rounded bg-white/10" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-3 bg-white/10 rounded w-full" />
+                      <div className="h-3 bg-white/10 rounded w-5/6" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredPlanners.length === 0 ? (
               <div className="text-center py-16">
                 <div className="w-20 h-20 bg-gradient-to-br from-primary-400 to-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
                   <FolderOpen className="w-10 h-10 text-secondary-900" />
@@ -320,7 +327,7 @@ export default function PlannerSelectionPage() {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 dashboard-stagger-slow">
                 {filteredPlanners.map((planner) => (
                   <div
                     key={planner.id}

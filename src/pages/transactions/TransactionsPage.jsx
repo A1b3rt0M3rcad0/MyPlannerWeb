@@ -272,7 +272,7 @@ export default function TransactionsPage() {
 
   return (
     <BasePage pageTitle="Transações" showPlannerSelector={true}>
-      <div className="space-y-6">
+      <div className="space-y-6 animate-dashboard-enter-slow">
         {/* Barra de ações */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <form onSubmit={onSubmitSearch} className="flex-1">
@@ -527,7 +527,7 @@ export default function TransactionsPage() {
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-white/10">
+            <div className="divide-y divide-white/10 dashboard-stagger-slow">
               {items.map((t) => {
                 const id = t.id ?? t.transaction_id;
                 const isIncome = !!(t.is_income ?? t.type === "income");
