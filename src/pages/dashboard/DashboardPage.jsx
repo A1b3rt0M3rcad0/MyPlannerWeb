@@ -2,7 +2,7 @@ import BasePage from "../../components/layout/BasePage";
 import { usePlanner } from "../../hooks/usePlanner.jsx";
 import { usePlannerColor } from "../../hooks/usePlannerColor.js";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   DollarSign,
   TrendingUp,
@@ -14,22 +14,140 @@ import {
   AlertCircle,
   Users,
 } from "lucide-react";
+import { dashboardAPI } from "../../services/api/dashboard";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { selectedPlanner } = usePlanner();
   const colors = usePlannerColor();
 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [stats, setStats] = useState({
+    total_balance: 0,
+    total_income: 0,
+    total_expenses: 0,
+    total_goals: 0,
+    expense_by_category: [],
+    goal_progress: [],
+    recent_transactions: [],
+  });
+
+  const currency = useMemo(
+    () =>
+      new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }),
+    []
+  );
+
+  // Filtro de mês: default = mês atual (YYYY-MM)
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    return `${y}-${m}`;
+  });
+
+  // Converte selectedMonth para initial_date/final_date (YYYY-MM-DD)
+  const { initialDate, finalDate } = useMemo(() => {
+    const [yearStr, monthStr] = (selectedMonth || "").split("-");
+    const year = Number(yearStr);
+    const month = Number(monthStr);
+    const start =
+      isNaN(year) || isNaN(month) ? new Date() : new Date(year, month - 1, 1);
+    const end =
+      isNaN(year) || isNaN(month) ? new Date() : new Date(year, month, 0);
+    const toISODate = (d) => d.toISOString().slice(0, 10);
+    return { initialDate: toISODate(start), finalDate: toISODate(end) };
+  }, [selectedMonth]);
+
+  // Opções de meses (últimos 24 meses) para seleção rápida
+  const monthOptions = useMemo(() => {
+    const options = [];
+    const now = new Date();
+    for (let i = 0; i < 24; i += 1) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}`;
+      const label = d.toLocaleDateString("pt-BR", {
+        month: "long",
+        year: "numeric",
+      });
+      options.push({ value, label });
+    }
+    return options;
+  }, []);
+
+  const currentMonthValue = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  }, []);
+
+  const changeMonthBy = (delta) => {
+    const [yStr, mStr] = (selectedMonth || currentMonthValue).split("-");
+    const y = Number(yStr);
+    const m = Number(mStr);
+    const d = new Date(y, m - 1 + delta, 1);
+    const next = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}`;
+    setSelectedMonth(next);
+  };
+
+  const isNextDisabled = useMemo(
+    () => selectedMonth >= currentMonthValue,
+    [selectedMonth, currentMonthValue]
+  );
+
   // Verifica se há planner selecionado, se não, redireciona para seleção
   useEffect(() => {
     const storedPlanner = localStorage.getItem(
       "finplanner_v2_selected_planner"
     );
-    
+
     if (!storedPlanner && !selectedPlanner) {
       navigate("/planner/selection");
     }
   }, [selectedPlanner, navigate]);
+
+  // Buscar estatísticas do dashboard do usuário
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!selectedPlanner) return;
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await dashboardAPI.getUserStats({
+          plannerId: selectedPlanner.id,
+          initialDate,
+          finalDate,
+        });
+        setStats({
+          total_balance: data?.total_balance ?? 0,
+          total_income: data?.total_income ?? 0,
+          total_expenses: data?.total_expenses ?? 0,
+          total_goals: data?.total_goals ?? 0,
+          expense_by_category: Array.isArray(data?.expense_by_category)
+            ? data.expense_by_category
+            : [],
+          goal_progress: Array.isArray(data?.goal_progress)
+            ? data.goal_progress
+            : [],
+          recent_transactions: Array.isArray(data?.recent_transactions)
+            ? data.recent_transactions
+            : [],
+        });
+      } catch (e) {
+        setError("Não foi possível carregar os dados do dashboard.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [selectedPlanner, initialDate, finalDate]);
 
   return (
     <BasePage
@@ -37,6 +155,46 @@ export default function DashboardPage() {
       showPlannerSelector={true}
     >
       <div className="space-y-6">
+        {/* Filtro de período (mês) - controles mais atrativos */}
+        <div className="flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => changeMonthBy(-1)}
+            className="px-2 py-1 text-sm rounded border border-white/10 text-gray-200 bg-secondary-800/50 hover:bg-secondary-700/50"
+            aria-label="Mês anterior"
+            title="Mês anterior"
+          >
+            ◀
+          </button>
+
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="bg-secondary-800/50 border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
+            aria-label="Selecionar mês"
+          >
+            {monthOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label.charAt(0).toUpperCase() + opt.label.slice(1)}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            onClick={() => changeMonthBy(1)}
+            disabled={isNextDisabled}
+            className={`px-2 py-1 text-sm rounded border border-white/10 ${
+              isNextDisabled
+                ? "text-gray-500 bg-secondary-800/30"
+                : "text-gray-200 bg-secondary-800/50 hover:bg-secondary-700/50"
+            }`}
+            aria-label="Próximo mês"
+            title="Próximo mês"
+          >
+            ▶
+          </button>
+        </div>
         {/* Informações do Planner */}
         {selectedPlanner && (
           <div
@@ -65,6 +223,13 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Mensagens de estado */}
+        {error && (
+          <div className="rounded-lg p-3 text-sm bg-red-500/10 border border-red-500/30 text-red-300">
+            {error}
+          </div>
+        )}
+
         {/* Cards de Resumo */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg">
@@ -76,7 +241,9 @@ export default function DashboardPage() {
                 >
                   Saldo Total
                 </p>
-                <p className="text-2xl font-bold text-white">R$ 12.450,00</p>
+                <p className="text-2xl font-bold text-white">
+                  {currency.format(stats.total_balance || 0)}
+                </p>
               </div>
               <div
                 className="w-12 h-12 rounded-xl flex items-center justify-center"
@@ -85,68 +252,66 @@ export default function DashboardPage() {
                 <DollarSign className="w-6 h-6 text-white" />
               </div>
             </div>
-            <div className="mt-4 flex items-center text-sm">
-              <TrendingUp className="w-4 h-4 text-green-400 mr-1" />
-              <span className="text-green-400 font-semibold">+5.2%</span>
-              <span className="text-gray-300 ml-1">vs mês anterior</span>
-            </div>
+            {loading ? (
+              <div className="mt-4 h-4 w-24 bg-white/10 rounded animate-pulse" />
+            ) : null}
           </div>
 
           <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-green-400">Receitas</p>
-                <p className="text-2xl font-bold text-white">R$ 8.500,00</p>
+                <p className="text-2xl font-bold text-white">
+                  {currency.format(stats.total_income || 0)}
+                </p>
               </div>
               <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-green-500">
                 <TrendingUp className="w-6 h-6 text-white" />
               </div>
             </div>
-            <div className="mt-4 flex items-center text-sm">
-              <TrendingUp className="w-4 h-4 text-green-400 mr-1" />
-              <span className="text-green-400 font-semibold">+12.3%</span>
-              <span className="text-gray-300 ml-1">vs mês anterior</span>
-            </div>
+            {loading ? (
+              <div className="mt-4 h-4 w-24 bg-white/10 rounded animate-pulse" />
+            ) : null}
           </div>
 
           <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-red-400">Despesas</p>
-                <p className="text-2xl font-bold text-white">R$ 3.200,00</p>
+                <p className="text-2xl font-bold text-white">
+                  {currency.format(stats.total_expenses || 0)}
+                </p>
               </div>
               <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-red-500">
                 <TrendingDown className="w-6 h-6 text-white" />
               </div>
             </div>
-            <div className="mt-4 flex items-center text-sm">
-              <TrendingDown className="w-4 h-4 text-red-400 mr-1" />
-              <span className="text-red-400 font-semibold">-2.1%</span>
-              <span className="text-gray-300 ml-1">vs mês anterior</span>
-            </div>
+            {loading ? (
+              <div className="mt-4 h-4 w-24 bg-white/10 rounded animate-pulse" />
+            ) : null}
           </div>
 
           <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-400">Investimentos</p>
-                <p className="text-2xl font-bold text-white">R$ 7.150,00</p>
+                <p className="text-sm text-blue-400">Metas</p>
+                <p className="text-2xl font-bold text-white">
+                  {currency.format(stats.total_goals || 0)}
+                </p>
               </div>
               <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-blue-500">
                 <BarChart3 className="w-6 h-6 text-white" />
               </div>
             </div>
-            <div className="mt-4 flex items-center text-sm">
-              <TrendingUp className="w-4 h-4 text-green-400 mr-1" />
-              <span className="text-green-400 font-semibold">+8.7%</span>
-              <span className="text-gray-300 ml-1">vs mês anterior</span>
-            </div>
+            {loading ? (
+              <div className="mt-4 h-4 w-24 bg-white/10 rounded animate-pulse" />
+            ) : null}
           </div>
         </div>
 
         {/* Gráficos e Análises */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Gráfico de Gastos por Categoria */}
+          {/* Gastos por Categoria */}
           <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-white">
@@ -155,45 +320,33 @@ export default function DashboardPage() {
               <PieChart className="w-5 h-5 text-gray-400" />
             </div>
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-4 h-4 rounded shadow-sm"
-                    style={{ backgroundColor: colors.primary }}
-                  ></div>
-                  <span className="text-sm text-gray-300">Alimentação</span>
+              {stats.expense_by_category.length === 0 && !loading ? (
+                <p className="text-sm text-gray-400">
+                  Sem dados neste período.
+                </p>
+              ) : null}
+              {stats.expense_by_category.map((c) => (
+                <div
+                  key={c.category_id}
+                  className="flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-4 h-4 rounded shadow-sm"
+                      style={{ backgroundColor: colors.primary }}
+                    ></div>
+                    <span className="text-sm text-gray-300">
+                      {c.category_name}
+                    </span>
+                  </div>
+                  <span className="text-sm font-semibold text-white">
+                    {currency.format(c.total_expenses || 0)}
+                  </span>
                 </div>
-                <span className="text-sm font-semibold text-white">
-                  R$ 1.200,00
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded bg-red-500"></div>
-                  <span className="text-sm text-gray-300">Transporte</span>
-                </div>
-                <span className="text-sm font-semibold text-white">
-                  R$ 800,00
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded bg-blue-500"></div>
-                  <span className="text-sm text-gray-300">Entretenimento</span>
-                </div>
-                <span className="text-sm font-semibold text-white">
-                  R$ 600,00
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded bg-yellow-500"></div>
-                  <span className="text-sm text-gray-300">Outros</span>
-                </div>
-                <span className="text-sm font-semibold text-white">
-                  R$ 600,00
-                </span>
-              </div>
+              ))}
+              {loading ? (
+                <div className="h-4 w-28 bg-white/10 rounded animate-pulse" />
+              ) : null}
             </div>
           </div>
 
@@ -206,66 +359,40 @@ export default function DashboardPage() {
               <Target className="w-5 h-5 text-gray-400" />
             </div>
             <div className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-300">
-                    Reserva de Emergência
-                  </span>
-                  <span className="text-sm font-semibold text-white">75%</span>
-                </div>
-                <div className="w-full bg-gray-600 rounded-full h-2">
-                  <div
-                    className="h-2 rounded-full transition-all duration-300"
-                    style={{
-                      width: "75%",
-                      backgroundColor: colors.primary,
-                    }}
-                  ></div>
-                </div>
-                <p className="text-xs text-gray-400 mt-1">
-                  R$ 7.500 de R$ 10.000
+              {stats.goal_progress.length === 0 && !loading ? (
+                <p className="text-sm text-gray-400">
+                  Nenhuma meta encontrada.
                 </p>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-300">
-                    Viagem para Europa
-                  </span>
-                  <span className="text-sm font-semibold text-white">45%</span>
+              ) : null}
+              {stats.goal_progress.map((g) => (
+                <div key={g.goal_id}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-gray-300">{g.goal_name}</span>
+                    <span className="text-sm font-semibold text-white">
+                      {Math.round(g.progress_percentage || 0)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-600 rounded-full h-2">
+                    <div
+                      className="h-2 rounded-full transition-all duration-300"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          Math.max(0, g.progress_percentage || 0)
+                        )}%`,
+                        backgroundColor: colors.primary,
+                      }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {currency.format(g.current_amount || 0)} de{" "}
+                    {currency.format(g.target_amount || 0)}
+                  </p>
                 </div>
-                <div className="w-full bg-gray-600 rounded-full h-2">
-                  <div
-                    className="h-2 rounded-full transition-all duration-300"
-                    style={{
-                      width: "45%",
-                      backgroundColor: colors.primary,
-                    }}
-                  ></div>
-                </div>
-                <p className="text-xs text-gray-400 mt-1">
-                  R$ 4.500 de R$ 10.000
-                </p>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-300">Carro Novo</span>
-                  <span className="text-sm font-semibold text-white">20%</span>
-                </div>
-                <div className="w-full bg-gray-600 rounded-full h-2">
-                  <div
-                    className="h-2 rounded-full transition-all duration-300"
-                    style={{
-                      width: "20%",
-                      backgroundColor: colors.primary,
-                    }}
-                  ></div>
-                </div>
-                <p className="text-xs text-gray-400 mt-1">
-                  R$ 6.000 de R$ 30.000
-                </p>
-              </div>
+              ))}
+              {loading ? (
+                <div className="h-4 w-28 bg-white/10 rounded animate-pulse" />
+              ) : null}
             </div>
           </div>
         </div>
@@ -279,54 +406,59 @@ export default function DashboardPage() {
             <CreditCard className="w-5 h-5 text-gray-400" />
           </div>
           <div className="space-y-4">
-            <div className="flex items-center justify-between py-3 border-b border-white/10">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-red-500/20 border border-red-500/30 rounded-full flex items-center justify-center">
-                  <TrendingDown className="w-5 h-5 text-red-400" />
+            {stats.recent_transactions.length === 0 && !loading ? (
+              <p className="text-sm text-gray-400">Sem transações recentes.</p>
+            ) : null}
+            {stats.recent_transactions.map((t) => {
+              const isIncome = !!t.is_income;
+              const color = isIncome ? "green" : "red";
+              const amount = currency.format(
+                Math.abs(t.transaction_amount || 0)
+              );
+              const sign = isIncome ? "+" : "-";
+              const date = t.transaction_date
+                ? new Date(t.transaction_date)
+                : null;
+              const dateStr = date
+                ? date.toLocaleString("pt-BR", {
+                    dateStyle: "short",
+                    timeStyle: "short",
+                  })
+                : "";
+              return (
+                <div
+                  key={t.transaction_id}
+                  className="flex items-center justify-between py-3 border-b border-white/10"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-10 h-10 bg-${color}-500/20 border border-${color}-500/30 rounded-full flex items-center justify-center`}
+                    >
+                      {isIncome ? (
+                        <TrendingUp className={`w-5 h-5 text-${color}-400`} />
+                      ) : (
+                        <TrendingDown className={`w-5 h-5 text-${color}-400`} />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-white">
+                        {t.transaction_category ||
+                          t.transaction_description ||
+                          "Transação"}
+                      </p>
+                      <p className="text-xs text-gray-400">{dateStr}</p>
+                    </div>
+                  </div>
+                  <span className={`text-sm font-semibold text-${color}-400`}>
+                    {sign}
+                    {amount}
+                  </span>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-white">
-                    Supermercado
-                  </p>
-                  <p className="text-xs text-gray-400">Hoje, 14:30</p>
-                </div>
-              </div>
-              <span className="text-sm font-semibold text-red-400">
-                -R$ 120,00
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between py-3 border-b border-white/10">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-500/20 border border-green-500/30 rounded-full flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-green-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-white">Salário</p>
-                  <p className="text-xs text-gray-400">Ontem, 09:00</p>
-                </div>
-              </div>
-              <span className="text-sm font-semibold text-green-400">
-                +R$ 5.000,00
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between py-3 border-b border-white/10">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-500/20 border border-blue-500/30">
-                  <BarChart3 className="w-5 h-5 text-blue-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-white">
-                    Investimento
-                  </p>
-                  <p className="text-xs text-gray-400">2 dias atrás</p>
-                </div>
-              </div>
-              <span className="text-sm font-semibold text-blue-400">
-                +R$ 500,00
-              </span>
-            </div>
+              );
+            })}
+            {loading ? (
+              <div className="h-4 w-28 bg-white/10 rounded animate-pulse" />
+            ) : null}
           </div>
         </div>
       </div>
