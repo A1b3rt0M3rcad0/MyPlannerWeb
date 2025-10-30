@@ -42,12 +42,14 @@ export default function TransactionsPage() {
     category: "",
     description: "",
     wallet: "",
+    accountId: "",
+    categoryId: "",
   });
   const [touched, setTouched] = useState({});
   const amountInputRef = useRef(null);
 
-  const [categoryOptions, setCategoryOptions] = useState([]);
-  const [accountOptions, setAccountOptions] = useState([]);
+  const [categoryOptions, setCategoryOptions] = useState([]); // [{id,label}]
+  const [accountOptions, setAccountOptions] = useState([]); // [{id, label}]
 
   const [editingId, setEditingId] = useState(null);
   const [editLoading, setEditLoading] = useState(false);
@@ -76,6 +78,16 @@ export default function TransactionsPage() {
     []
   );
 
+  const categoriesById = useMemo(() => {
+    const map = {};
+    for (const c of categoryOptions) {
+      if (c && Number.isFinite(c.id)) {
+        map[c.id] = c.label;
+      }
+    }
+    return map;
+  }, [categoryOptions]);
+
   const load = async (opts = {}) => {
     const nextPage = opts.page ?? page;
     const term = opts.search ?? search;
@@ -88,13 +100,22 @@ export default function TransactionsPage() {
         search: term,
         plannerId: selectedPlanner?.id,
       });
-      const list = Array.isArray(data?.items)
+      // Normaliza formatos possíveis: { data: { transactions: [...] } } | { transactions: [...] } | { items: [...] } | array direto
+      const list = Array.isArray(data?.data?.transactions)
+        ? data.data.transactions
+        : Array.isArray(data?.transactions)
+        ? data.transactions
+        : Array.isArray(data?.items)
         ? data.items
         : Array.isArray(data)
         ? data
         : [];
       setItems(list);
-      if (typeof data?.total === "number") {
+      const pagination = data?.data?.pagination || data?.pagination;
+      if (pagination && typeof pagination?.total === "number") {
+        const totalPages = Math.max(1, Math.ceil(pagination.total / pageSize));
+        setHasNextPage(nextPage < totalPages);
+      } else if (typeof data?.total === "number") {
         const totalPages = Math.max(1, Math.ceil(data.total / pageSize));
         setHasNextPage(nextPage < totalPages);
       } else {
@@ -119,15 +140,20 @@ export default function TransactionsPage() {
     const fetchCategories = async () => {
       try {
         const data = await userCategoriesApi.getCategories(1, 20, "");
-        const list = Array.isArray(data?.items)
+        const list = Array.isArray(data?.data?.categories)
+          ? data.data.categories
+          : Array.isArray(data?.items)
           ? data.items
           : Array.isArray(data)
           ? data
           : [];
-        const names = list
-          .map((c) => c.name || c.category_name)
-          .filter(Boolean);
-        setCategoryOptions(Array.from(new Set(names)).slice(0, 12));
+        const options = list
+          .map((c) => ({
+            id: Number(c.id ?? c.category_id),
+            label: (c.name || c.category_name || "Categoria").toString(),
+          }))
+          .filter((o) => Number.isFinite(o.id));
+        setCategoryOptions(options.slice(0, 50));
       } catch (e) {
         // silencioso
       }
@@ -140,13 +166,26 @@ export default function TransactionsPage() {
     const fetchAccounts = async () => {
       try {
         const data = await userAccountsApi.getAccounts(1, 50, "");
-        const list = Array.isArray(data?.items)
+        // Normaliza formatos possíveis: { data: { accounts: [...] } } | { items: [...] } | array direto
+        const list = Array.isArray(data?.data?.accounts)
+          ? data.data.accounts
+          : Array.isArray(data?.items)
           ? data.items
           : Array.isArray(data)
           ? data
           : [];
-        const names = list.map((a) => a.name || a.account_name).filter(Boolean);
-        setAccountOptions(Array.from(new Set(names)).slice(0, 50));
+        const options = list
+          .map((a) => ({
+            id: Number(a.id ?? a.account_id),
+            label: (
+              a.description ||
+              a.name ||
+              a.account_name ||
+              "Conta"
+            ).toString(),
+          }))
+          .filter((o) => Number.isFinite(o.id));
+        setAccountOptions(options);
       } catch (e) {
         // silencioso
       }
@@ -178,9 +217,11 @@ export default function TransactionsPage() {
         amount: Number(amountNumber),
         date: form.date,
         type: form.type,
-        category: form.category || undefined,
-        description: form.description || undefined,
+        category_id: form.categoryId ? Number(form.categoryId) : undefined,
+        description:
+          typeof form.description === "string" ? form.description.trim() : "",
         wallet: form.wallet || undefined,
+        account_id: form.accountId ? Number(form.accountId) : undefined,
         planner_id: selectedPlanner?.id,
       };
       await userTransactionsApi.createTransaction(payload);
@@ -380,16 +421,16 @@ export default function TransactionsPage() {
                   <div className="relative">
                     <Tag className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <select
-                      value={form.category}
+                      value={form.categoryId}
                       onChange={(e) =>
-                        setForm({ ...form, category: e.target.value })
+                        setForm({ ...form, categoryId: e.target.value })
                       }
                       className="w-full pl-9 px-3 py-2 rounded-lg bg-secondary-900/50 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-white/20"
                     >
                       <option value="">Selecione uma categoria</option>
-                      {categoryOptions.map((name) => (
-                        <option key={name} value={name}>
-                          {name}
+                      {categoryOptions.map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {opt.label}
                         </option>
                       ))}
                     </select>
@@ -397,21 +438,21 @@ export default function TransactionsPage() {
                 </div>
                 <div>
                   <label className="block text-xs text-gray-400 mb-1">
-                    Carteira
+                    Conta
                   </label>
                   <div className="relative">
                     <Wallet className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <select
-                      value={form.wallet}
+                      value={form.accountId}
                       onChange={(e) =>
-                        setForm({ ...form, wallet: e.target.value })
+                        setForm({ ...form, accountId: e.target.value })
                       }
                       className="w-full pl-9 px-3 py-2 rounded-lg bg-secondary-900/50 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-white/20"
                     >
-                      <option value="">Selecione uma carteira</option>
-                      {accountOptions.map((name) => (
-                        <option key={name} value={name}>
-                          {name}
+                      <option value="">Selecione uma conta</option>
+                      {accountOptions.map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {opt.label}
                         </option>
                       ))}
                     </select>
@@ -493,11 +534,17 @@ export default function TransactionsPage() {
                 const amount = currency.format(
                   Math.abs(t.amount ?? t.transaction_amount ?? 0)
                 );
-                const date = t.date ?? t.transaction_date;
+                const date = t.date ?? t.transaction_date ?? t.created_at;
                 const dateStr = date
                   ? new Date(date).toLocaleDateString("pt-BR")
                   : "";
-                const category = t.category ?? t.transaction_category ?? "—";
+                const category =
+                  t.category ??
+                  t.transaction_category ??
+                  (Number.isFinite(Number(t.category_id))
+                    ? categoriesById[Number(t.category_id)]
+                    : undefined) ??
+                  "—";
                 const description =
                   t.description ?? t.transaction_description ?? "";
                 const wallet = t.wallet ?? t.transaction_wallet ?? "";
