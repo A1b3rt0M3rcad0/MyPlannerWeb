@@ -15,7 +15,7 @@ const menuItems = [
   { icon: Home, label: "Dashboard", path: "/dashboard" },
   { icon: PieChart, label: "Orçamentos", path: "/coming-soon" },
   { icon: CreditCard, label: "Transações", path: "/transactions" },
-  { icon: Wallet, label: "Carteiras", path: "/coming-soon" },
+  { icon: Wallet, label: "Contas", path: "/accounts" },
   { icon: Tag, label: "Categorias", path: "/categories" },
   { icon: Target, label: "Metas", path: "/coming-soon" },
   { icon: Users, label: "Membros", path: "/coming-soon" },

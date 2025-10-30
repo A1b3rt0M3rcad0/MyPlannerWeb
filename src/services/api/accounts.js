@@ -69,8 +69,11 @@ export const userAccountsApi = {
     return response.data;
   },
 
-  deleteAccount: async (accountId) => {
-    const response = await api.delete(`/my/account/${accountId}`);
+  deleteAccount: async (accountId, { plannerId } = {}) => {
+    // Envia planner_id no body para backends que validam propriedade por planner
+    const response = await api.delete(`/my/account/${accountId}`, {
+      data: plannerId ? { planner_id: plannerId } : undefined,
+    });
     return response.data;
   },
 };

@@ -11,6 +11,7 @@ import DashboardPage from "./pages/dashboard/DashboardPage";
 import ComingSoonPage from "./pages/ComingSoon";
 import CategoriesPage from "./pages/categories/CategoriesPage";
 import TransactionsPage from "./pages/transactions/TransactionsPage";
+import AccountsPage from "./pages/accounts/AccountsPage";
 import AdminRoutes from "./pages/admin/AdminRoutes";
 import { ROUTES } from "./config/constants";
 
@@ -51,6 +52,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ComingSoonPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/accounts"
+            element={
+              <ProtectedRoute>
+                <AccountsPage />
               </ProtectedRoute>
             }
           />
