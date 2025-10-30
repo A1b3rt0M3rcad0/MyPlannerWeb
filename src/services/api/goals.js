@@ -79,4 +79,22 @@ export const userGoalsApi = {
     });
     return response.data;
   },
+  markAsAchieved: async (goalId) => {
+    const response = await api.patch(
+      `/my/goal/${Number(goalId)}/mark-achieved`
+    );
+    return response.data;
+  },
+  activateGoal: async (goalId) => {
+    const response = await api.patch(`/my/goal/${Number(goalId)}/activate`);
+    return response.data;
+  },
+  deactivateGoal: async (goalId, accountId) => {
+    const payload = accountId ? { account_id: Number(accountId) } : {};
+    const response = await api.patch(
+      `/my/goal/${Number(goalId)}/deactivate`,
+      payload
+    );
+    return response.data;
+  },
 };

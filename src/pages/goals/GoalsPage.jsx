@@ -14,6 +14,10 @@ import {
   X,
   Trash2,
   Pencil,
+  CheckCircle2,
+  Power,
+  PowerOff,
+  Settings,
 } from "lucide-react";
 import SmartList from "../../components/SmartList";
 
@@ -31,6 +35,12 @@ export default function GoalsPage() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoadingId, setDeleteLoadingId] = useState(null);
   const [deleteAccountId, setDeleteAccountId] = useState("");
+
+  // Modal de desativação com seleção de conta quando há saldo na meta
+  const [deactivateModalOpen, setDeactivateModalOpen] = useState(false);
+  const [deactivateTarget, setDeactivateTarget] = useState(null);
+  const [deactivateLoadingId, setDeactivateLoadingId] = useState(null);
+  const [deactivateAccountId, setDeactivateAccountId] = useState("");
 
   const [accountOptions, setAccountOptions] = useState([]); // [{id,label,balance}]
   const [depositForGoal, setDepositForGoal] = useState(null); // goal_id
@@ -55,6 +65,18 @@ export default function GoalsPage() {
     color: colors.primary,
     priority: "medium",
   });
+
+  const [editingId, setEditingId] = useState(null);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState(null);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    target_amount: "",
+    color: "",
+  });
+
+  const [statusLoadingId, setStatusLoadingId] = useState(null);
+  const [menuOpenId, setMenuOpenId] = useState(null);
 
   const accentBg = useMemo(
     () => ({ backgroundColor: colors.primary }),
@@ -107,12 +129,24 @@ export default function GoalsPage() {
         setHasNextPage(items.length === pageSize);
       }
       setPage(nextPage);
+      // Helpers de normalização
+      const normalizeBool = (v, fallbackFalse = false) => {
+        if (v === undefined || v === null) return fallbackFalse;
+        if (typeof v === "boolean") return v;
+        if (typeof v === "number") return v === 1;
+        if (typeof v === "string") {
+          const s = v.trim().toLowerCase();
+          return s === "true" || s === "1" || s === "yes" || s === "sim";
+        }
+        return fallbackFalse;
+      };
+
       // Mapeia para o formato esperado na UI atual
       const list = items.map((g) => ({
-        goal_id: g.id ?? g.goal_id,
+        goal_id: Number(g.id ?? g.goal_id),
         goal_name: g.name ?? g.goal_name,
-        target_amount: g.target_amount,
-        current_amount: g.current_amount,
+        target_amount: Number(g.target_amount ?? 0),
+        current_amount: Number(g.current_amount ?? 0),
         progress_percentage:
           typeof g.progress_percentage === "number"
             ? g.progress_percentage
@@ -122,6 +156,8 @@ export default function GoalsPage() {
         priority:
           typeof g.priority === "string" ? g.priority.toLowerCase() : "medium",
         color: g.color,
+        is_achieved: normalizeBool(g.is_achieved, false),
+        is_active: normalizeBool(g.is_active, true),
       }));
       setGoals(list);
     } catch (e) {
@@ -159,6 +195,20 @@ export default function GoalsPage() {
     };
     fetchAccounts();
   }, []);
+
+  // Fechar menu ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuOpenId && !event.target.closest("[data-menu-container]")) {
+        setMenuOpenId(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [menuOpenId]);
 
   return (
     <BasePage pageTitle="Metas" showPlannerSelector={true}>
@@ -374,128 +424,438 @@ export default function GoalsPage() {
             <div className="space-y-4 dashboard-stagger-slow">
               {goals.map((g) => {
                 const progress = Math.round(g.progress_percentage || 0);
-                const iconBg = (() => {
-                  const hex = String(g.color || "");
-                  if (/^#([0-9a-fA-F]{6})$/.test(hex)) return `${hex}33`;
-                  return `${colors.primary}33`;
-                })();
+                const isExceeded = progress > 100;
+                const p = (g.priority || "medium").toLowerCase();
+                const priorityMap = {
+                  low: {
+                    bg: "bg-green-500/15",
+                    text: "text-green-300",
+                    ring: "ring-green-500/20",
+                    label: "Baixa",
+                  },
+                  medium: {
+                    bg: "bg-yellow-500/15",
+                    text: "text-yellow-300",
+                    ring: "ring-yellow-500/20",
+                    label: "Média",
+                  },
+                  high: {
+                    bg: "bg-red-500/15",
+                    text: "text-red-300",
+                    ring: "ring-red-500/20",
+                    label: "Alta",
+                  },
+                };
+                const priorityCfg = priorityMap[p] || priorityMap.medium;
+
+                // Determina o badge baseado nos status
+                let statusBadge = null;
+                if (g.is_achieved) {
+                  statusBadge = {
+                    label: "✓ Finalizada",
+                    bgClass: "bg-emerald-500/20",
+                    textClass: "text-emerald-300",
+                    ringClass: "ring-1 ring-emerald-500/30",
+                  };
+                } else if (!g.is_active) {
+                  statusBadge = {
+                    label: "⏸ Desativada",
+                    bgClass: "bg-gray-500/20",
+                    textClass: "text-gray-300",
+                    ringClass: "ring-1 ring-gray-500/30",
+                  };
+                } else if (isExceeded) {
+                  statusBadge = {
+                    label: "🎉 Excedida",
+                    bgClass: "bg-amber-500/20",
+                    textClass: "text-amber-300",
+                    ringClass: "ring-1 ring-amber-500/30",
+                  };
+                }
+
                 return (
                   <div
                     key={g.goal_id}
-                    className="rounded-xl border border-white/10 bg-white/5 p-4"
+                    className={`relative ${
+                      menuOpenId === g.goal_id ? "z-[100]" : ""
+                    }`}
+                    data-menu-container
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div
-                          className="w-10 h-10 rounded-lg flex items-center justify-center"
-                          style={{ backgroundColor: iconBg }}
-                        >
-                          <Target
-                            className="w-5 h-5"
-                            style={{ color: g.color || colors.primary }}
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <p className="text-white font-semibold truncate">
-                              {g.goal_name || "Meta"}
-                            </p>
-                            {(() => {
-                              const p = (g.priority || "medium").toLowerCase();
-                              const map = {
-                                low: {
-                                  bg: "bg-green-500/15",
-                                  text: "text-green-300",
-                                  ring: "ring-green-500/20",
-                                  label: "Baixa",
-                                },
-                                medium: {
-                                  bg: "bg-yellow-500/15",
-                                  text: "text-yellow-300",
-                                  ring: "ring-yellow-500/20",
-                                  label: "Média",
-                                },
-                                high: {
-                                  bg: "bg-red-500/15",
-                                  text: "text-red-300",
-                                  ring: "ring-red-500/20",
-                                  label: "Alta",
-                                },
-                              };
-                              const cfg = map[p] || map.medium;
-                              return (
-                                <span
-                                  className={`flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold ${cfg.bg} ${cfg.text} ring-1 ${cfg.ring}`}
-                                  title={`Prioridade: ${cfg.label}`}
-                                >
-                                  {cfg.label}
-                                </span>
-                              );
-                            })()}
-                          </div>
-                          <p className="text-xs text-gray-400 truncate">
-                            {currency.format(g.current_amount || 0)} /{" "}
-                            {currency.format(g.target_amount || 0)}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-white font-semibold">
-                          {progress}%
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setDepositForGoal(g.goal_id);
-                            setDepositAmount("");
-                            setDepositError(null);
-                            setWithdrawForGoal(null);
-                          }}
-                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-secondary-900"
-                          style={accentBg}
-                        >
-                          <Plus className="w-4 h-4" /> Depositar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setWithdrawForGoal(g.goal_id);
-                            setWithdrawAmount("");
-                            setWithdrawError(null);
-                            setDepositForGoal(null);
-                          }}
-                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border border-white/10 text-gray-200 bg-white/5 hover:bg-white/10"
-                        >
-                          Sacar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setDeleteTarget({
+                    {(() => {
+                      const actions = [];
+                      if (!g.is_achieved && g.is_active) {
+                        actions.push(
+                          {
+                            key: "deposit",
+                            title: "Depositar",
+                            icon: <Plus className="w-4 h-4 text-white" />,
+                            onClick: () => {
+                              setDepositForGoal(Number(g.goal_id));
+                              setDepositAmount("");
+                              setDepositError(null);
+                              setWithdrawForGoal(null);
+                            },
+                            className:
+                              "p-2 rounded-lg border border-white/10 hover:brightness-110",
+                            style: {
+                              backgroundColor: g.color || colors.primary,
+                            },
+                          },
+                          {
+                            key: "withdraw",
+                            title: "Sacar",
+                            icon: (
+                              <Banknote className="w-4 h-4 text-gray-300" />
+                            ),
+                            onClick: () => {
+                              setWithdrawForGoal(Number(g.goal_id));
+                              setWithdrawAmount("");
+                              setWithdrawError(null);
+                              setDepositForGoal(null);
+                            },
+                            className:
+                              "p-2 rounded-lg border border-white/10 bg-secondary-700 hover:bg-secondary-600",
+                          }
+                        );
+                      }
+                      actions.push({
+                        key: "menu",
+                        title: "Menu",
+                        icon: <Settings className="w-4 h-4 text-gray-300" />,
+                        onClick: () => {
+                          setMenuOpenId(
+                            menuOpenId === g.goal_id ? null : g.goal_id
+                          );
+                        },
+                        className:
+                          "p-2 rounded-lg border border-white/10 bg-secondary-700 hover:bg-secondary-600 relative",
+                      });
+
+                      return (
+                        <SmartList
+                          items={[
+                            {
                               id: g.goal_id,
-                              name: g.goal_name,
-                              current_amount: g.current_amount || 0,
-                            });
-                            setDeleteAccountId("");
-                            setDeleteModalOpen(true);
-                          }}
-                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border border-white/10 text-red-300/80 bg-red-500/10 hover:bg-red-500/20"
-                          title="Excluir meta"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Excluir
-                        </button>
+                              title: g.goal_name || "Meta",
+                              subtitle: `${currency.format(
+                                g.current_amount || 0
+                              )} / ${currency.format(g.target_amount || 0)}`,
+                              leftColor: g.color || colors.primary,
+                              leftIcon: (
+                                <Target
+                                  className="w-5 h-5"
+                                  style={{ color: g.color || colors.primary }}
+                                />
+                              ),
+                              badge: statusBadge || {
+                                label: priorityCfg.label,
+                                bgClass: priorityCfg.bg,
+                                textClass: priorityCfg.text,
+                                ringClass: `ring-1 ${priorityCfg.ring}`,
+                              },
+                              rightValue: `${progress}%`,
+                              actions,
+                            },
+                          ]}
+                          className="mb-2"
+                        />
+                      );
+                    })()}
+                    {/* Menu dropdown */}
+                    {menuOpenId === g.goal_id && (
+                      <div
+                        className="absolute right-0 top-full mt-2 w-56 rounded-lg shadow-2xl z-50 overflow-hidden"
+                        style={{
+                          backgroundColor: "#1e293b",
+                          border: "2px solid #475569",
+                        }}
+                      >
+                        <div className="py-1">
+                          {/* Editar */}
+                          <button
+                            onClick={() => {
+                              setEditingId(g.goal_id);
+                              setEditForm({
+                                name: g.goal_name,
+                                target_amount: String(g.target_amount || 0),
+                                color: g.color || colors.primary,
+                              });
+                              setEditError(null);
+                              setMenuOpenId(null);
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-white flex items-center gap-3 transition-colors"
+                            style={{ backgroundColor: "#1e293b" }}
+                            onMouseEnter={(e) =>
+                              (e.target.style.backgroundColor = "#334155")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.target.style.backgroundColor = "#1e293b")
+                            }
+                          >
+                            <Pencil className="w-4 h-4" />
+                            <span>Editar</span>
+                          </button>
+
+                          {/* Status: Ativar */}
+                          {!g.is_achieved && !g.is_active && (
+                            <button
+                              onClick={async () => {
+                                try {
+                                  setStatusLoadingId(g.goal_id);
+                                  await userGoalsApi.activateGoal(g.goal_id);
+                                  setMenuOpenId(null);
+                                  await refresh();
+                                } catch (err) {
+                                  console.error("Erro ao ativar meta:", err);
+                                } finally {
+                                  setStatusLoadingId(null);
+                                }
+                              }}
+                              disabled={statusLoadingId === g.goal_id}
+                              className="w-full px-4 py-2 text-left text-sm text-green-400 flex items-center gap-3 transition-colors disabled:opacity-50"
+                              style={{ backgroundColor: "#1e293b" }}
+                              onMouseEnter={(e) =>
+                                !e.target.disabled &&
+                                (e.target.style.backgroundColor = "#334155")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.target.style.backgroundColor = "#1e293b")
+                              }
+                            >
+                              {statusLoadingId === g.goal_id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Power className="w-4 h-4" />
+                              )}
+                              <span>Ativar</span>
+                            </button>
+                          )}
+
+                          {/* Status: Desativar */}
+                          {!g.is_achieved && g.is_active && (
+                            <button
+                              onClick={async () => {
+                                // Abre modal de desativação para escolher conta (se necessário)
+                                setDeactivateTarget({
+                                  id: g.goal_id,
+                                  name: g.name,
+                                  current_amount: g.current_amount,
+                                });
+                                setDeactivateAccountId("");
+                                setDeactivateModalOpen(true);
+                              }}
+                              disabled={statusLoadingId === g.goal_id}
+                              className="w-full px-4 py-2 text-left text-sm text-orange-400 flex items-center gap-3 transition-colors disabled:opacity-50"
+                              style={{ backgroundColor: "#1e293b" }}
+                              onMouseEnter={(e) =>
+                                !e.target.disabled &&
+                                (e.target.style.backgroundColor = "#334155")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.target.style.backgroundColor = "#1e293b")
+                              }
+                            >
+                              {statusLoadingId === g.goal_id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <PowerOff className="w-4 h-4" />
+                              )}
+                              <span>Desativar</span>
+                            </button>
+                          )}
+
+                          {/* Status: Marcar como Finalizada */}
+                          {!g.is_achieved && g.is_active && (
+                            <button
+                              onClick={async () => {
+                                try {
+                                  setStatusLoadingId(g.goal_id);
+                                  await userGoalsApi.markAsAchieved(g.goal_id);
+                                  setMenuOpenId(null);
+                                  await refresh();
+                                } catch (err) {
+                                  console.error(
+                                    "Erro ao marcar meta como finalizada:",
+                                    err
+                                  );
+                                } finally {
+                                  setStatusLoadingId(null);
+                                }
+                              }}
+                              disabled={statusLoadingId === g.goal_id}
+                              className="w-full px-4 py-2 text-left text-sm text-blue-400 flex items-center gap-3 transition-colors disabled:opacity-50"
+                              style={{ backgroundColor: "#1e293b" }}
+                              onMouseEnter={(e) =>
+                                !e.target.disabled &&
+                                (e.target.style.backgroundColor = "#334155")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.target.style.backgroundColor = "#1e293b")
+                              }
+                            >
+                              {statusLoadingId === g.goal_id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <CheckCircle2 className="w-4 h-4" />
+                              )}
+                              <span>Marcar como Finalizada</span>
+                            </button>
+                          )}
+
+                          {/* Divisor */}
+                          <div
+                            className="border-t my-1"
+                            style={{ borderColor: "#475569" }}
+                          />
+
+                          {/* Excluir */}
+                          <button
+                            onClick={() => {
+                              setDeleteTarget({
+                                id: g.goal_id,
+                                name: g.goal_name,
+                                current_amount: g.current_amount || 0,
+                              });
+                              setDeleteAccountId("");
+                              setMenuOpenId(null);
+                              setDeleteModalOpen(true);
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-red-400 flex items-center gap-3 transition-colors"
+                            style={{ backgroundColor: "#1e293b" }}
+                            onMouseEnter={(e) =>
+                              (e.target.style.backgroundColor = "#334155")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.target.style.backgroundColor = "#1e293b")
+                            }
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            <span>Excluir</span>
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
+                    )}
+                    <div className="w-full bg-gray-700 rounded-full h-2 mb-4 relative overflow-hidden">
                       <div
                         className="h-2 rounded-full transition-all duration-300"
                         style={{
                           width: `${Math.min(100, Math.max(0, progress))}%`,
-                          backgroundColor: g.color || colors.primary,
+                          backgroundColor: isExceeded
+                            ? "#10b981"
+                            : g.color || colors.primary,
                         }}
                       />
+                      {isExceeded && (
+                        <div className="absolute inset-0">
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
+                        </div>
+                      )}
                     </div>
+                    {editingId === g.goal_id ? (
+                      <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">
+                            Nome
+                          </label>
+                          <input
+                            type="text"
+                            value={editForm.name}
+                            onChange={(e) =>
+                              setEditForm({ ...editForm, name: e.target.value })
+                            }
+                            placeholder="Nome da meta"
+                            className="w-full px-3 py-2 rounded-lg bg-secondary-900/50 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-white/20"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">
+                            Valor alvo
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={editForm.target_amount}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                target_amount: e.target.value,
+                              })
+                            }
+                            placeholder="0,00"
+                            className="w-full px-3 py-2 rounded-lg bg-secondary-900/50 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-white/20"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">
+                            Cor
+                          </label>
+                          <input
+                            type="color"
+                            value={editForm.color}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                color: e.target.value,
+                              })
+                            }
+                            className="h-10 w-full rounded cursor-pointer bg-transparent border border-white/10"
+                          />
+                        </div>
+                        <div className="flex items-end justify-end gap-2">
+                          <button
+                            type="button"
+                            disabled={editLoading}
+                            onClick={async () => {
+                              if (!editForm.name.trim()) {
+                                setEditError("Informe o nome da meta.");
+                                return;
+                              }
+                              if (
+                                !editForm.target_amount ||
+                                Number.isNaN(Number(editForm.target_amount))
+                              ) {
+                                setEditError("Informe o valor alvo.");
+                                return;
+                              }
+                              try {
+                                setEditLoading(true);
+                                setEditError(null);
+                                await userGoalsApi.updateGoal(g.goal_id, {
+                                  name: editForm.name.trim(),
+                                  targetAmount: Number(editForm.target_amount),
+                                  color: editForm.color,
+                                });
+                                setEditingId(null);
+                                await refresh();
+                              } catch (err) {
+                                setEditError("Não foi possível editar a meta.");
+                              } finally {
+                                setEditLoading(false);
+                              }
+                            }}
+                            className="px-3 py-2 rounded-lg text-sm font-medium text-secondary-900 disabled:opacity-50"
+                            style={accentBg}
+                          >
+                            {editLoading ? "Salvando..." : "Salvar"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingId(null);
+                              setEditError(null);
+                            }}
+                            className="px-3 py-2 rounded-lg text-sm text-gray-300 border border-white/10 bg-white/5"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                        {editError ? (
+                          <div className="md:col-span-4 -mt-2 text-xs text-red-300 bg-red-500/10 border border-red-500/30 rounded p-2">
+                            {editError}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
                     {depositForGoal === g.goal_id ? (
                       <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div>
@@ -902,6 +1262,105 @@ export default function GoalsPage() {
                   </>
                 ) : (
                   "Excluir"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de desativação com seleção de conta quando há saldo na meta */}
+      {deactivateModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-secondary-800/90 backdrop-blur-xl rounded-2xl p-6 max-w-md w-full mx-4 border border-white/10 shadow-2xl">
+            <div className="text-center mb-4">
+              <div className="w-16 h-16 bg-orange-500/20 border border-orange-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <PowerOff className="w-8 h-8 text-orange-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-1">
+                Desativar meta
+              </h3>
+              <p className="text-gray-300">
+                Tem certeza que deseja desativar "
+                {deactivateTarget?.name || "Meta"}"?
+              </p>
+            </div>
+            {Number(deactivateTarget?.current_amount || 0) > 0 ? (
+              <div className="mb-4 text-left">
+                <p className="text-sm text-gray-300 mb-2">
+                  Esta meta possui saldo de
+                  <span className="font-semibold text-white">
+                    {" "}
+                    {currency.format(
+                      Number(deactivateTarget.current_amount || 0)
+                    )}
+                  </span>
+                  . Selecione a conta para onde o valor será transferido:
+                </p>
+                <div className="relative">
+                  <select
+                    value={deactivateAccountId}
+                    onChange={(e) => setDeactivateAccountId(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-secondary-900/50 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-white/20"
+                  >
+                    <option value="">Selecione uma conta</option>
+                    {accountOptions.map((opt) => (
+                      <option key={opt.id} value={opt.id}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            ) : null}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  if (deactivateLoadingId) return;
+                  setDeactivateModalOpen(false);
+                  setDeactivateTarget(null);
+                  setDeactivateAccountId("");
+                }}
+                disabled={!!deactivateLoadingId}
+                className="flex-1 px-6 py-3 border border-white/20 text-gray-300 rounded-xl hover:bg-white/10 transition-all duration-200 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  if (!deactivateTarget?.id) return;
+                  const needsAccount =
+                    Number(deactivateTarget?.current_amount || 0) > 0;
+                  if (needsAccount && !deactivateAccountId) return;
+                  try {
+                    setDeactivateLoadingId(deactivateTarget.id);
+                    await userGoalsApi.deactivateGoal(
+                      deactivateTarget.id,
+                      needsAccount ? deactivateAccountId : undefined
+                    );
+                    setDeactivateModalOpen(false);
+                    setDeactivateTarget(null);
+                    setDeactivateAccountId("");
+                    setMenuOpenId(null);
+                    await refresh({ page: 1 });
+                  } finally {
+                    setDeactivateLoadingId(null);
+                  }
+                }}
+                disabled={
+                  !!deactivateLoadingId ||
+                  (Number(deactivateTarget?.current_amount || 0) > 0 &&
+                    !deactivateAccountId)
+                }
+                className="flex-1 px-6 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deactivateLoadingId ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Desativando...
+                  </>
+                ) : (
+                  "Desativar"
                 )}
               </button>
             </div>
