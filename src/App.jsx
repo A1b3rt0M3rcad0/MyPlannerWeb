@@ -8,6 +8,7 @@ import AdminLogin from "./pages/auth/AdminLogin";
 import PlannerSelectionPage from "./pages/planner/PlannerSelectionPage";
 import CreatePlannerPage from "./pages/planner/CreatePlannerPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
+import ComingSoonPage from "./pages/ComingSoon";
 import AdminRoutes from "./pages/admin/AdminRoutes";
 import { ROUTES } from "./config/constants";
 
@@ -40,6 +41,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/budgets"
+            element={
+              <ProtectedRoute>
+                <ComingSoonPage />
               </ProtectedRoute>
             }
           />
