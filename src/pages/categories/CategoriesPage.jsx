@@ -4,7 +4,16 @@ import { usePlannerColor } from "../../hooks/usePlannerColor";
 import { usePlanner } from "../../hooks/usePlanner";
 import { userCategoriesApi } from "../../services/api/categories";
 import ConfirmationModal from "../../components/ConfirmationModal";
-import { Search, Plus, FolderOpen, Loader2, X } from "lucide-react";
+import {
+  Search,
+  Plus,
+  FolderOpen,
+  Loader2,
+  X,
+  Pencil,
+  Trash2,
+} from "lucide-react";
+import SmartList from "../../components/SmartList";
 
 export default function CategoriesPage() {
   const colors = usePlannerColor();
@@ -255,14 +264,57 @@ export default function CategoriesPage() {
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-white/10 dashboard-stagger-slow">
+            <div className="dashboard-stagger-slow">
               {items.map((c) => {
                 const id = c.id ?? c.category_id;
                 const isEditing = editingId === id;
+
+                const item = {
+                  id,
+                  title: c.name || c.category_name || "Categoria",
+                  subtitle: `#${id ?? "—"}`,
+                  leftColor: c.color || colors.primary,
+                  leftIcon: (
+                    <FolderOpen
+                      className="w-5 h-5"
+                      style={{ color: c.color || colors.primary }}
+                    />
+                  ),
+                  actions: [
+                    {
+                      key: "edit",
+                      title: "Editar",
+                      icon: <Pencil className="w-4 h-4 text-gray-300" />,
+                      onClick: () => {
+                        setEditingId(id);
+                        setEditName(c.name || c.category_name || "");
+                        setEditColor(c.color || "");
+                      },
+                      className:
+                        "p-2 rounded-lg border border-white/10 text-gray-300 bg-white/5 hover:bg-white/10",
+                    },
+                    {
+                      key: "delete",
+                      title: "Excluir",
+                      icon: <Trash2 className="w-4 h-4 text-red-300" />,
+                      onClick: () => {
+                        setDeleteTarget({
+                          id,
+                          name: c.name || c.category_name || "Categoria",
+                        });
+                        setDeleteModalOpen(true);
+                      },
+                      className:
+                        "p-2 rounded-lg border border-white/10 bg-red-500/10 hover:bg-red-500/20",
+                    },
+                  ],
+                };
+
                 return (
-                  <div key={id} className="py-3">
+                  <div key={id} className="mb-2">
+                    <SmartList items={[item]} />
                     {isEditing ? (
-                      <div className="flex items-center justify-between gap-3">
+                      <div className="mt-3 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <span
                             className="inline-block w-3 h-3 rounded-full flex-shrink-0"
@@ -343,54 +395,7 @@ export default function CategoriesPage() {
                           </button>
                         </div>
                       </div>
-                    ) : (
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <span
-                            className="inline-block w-3 h-3 rounded-full flex-shrink-0"
-                            style={{
-                              backgroundColor: c.color || colors.primary,
-                            }}
-                          />
-                          <div className="min-w-0">
-                            <p className="text-white font-medium truncate">
-                              {c.name || c.category_name || "Categoria"}
-                            </p>
-                            <p className="text-gray-400 text-xs truncate">
-                              #{id ?? "—"}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingId(id);
-                              setEditName(c.name || c.category_name || "");
-                              setEditColor(c.color || "");
-                            }}
-                            className="px-3 py-1.5 text-xs rounded-lg border border-white/10 text-gray-300 bg-white/5"
-                            title="Editar"
-                          >
-                            Editar
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDeleteTarget({
-                                id,
-                                name: c.name || c.category_name || "Categoria",
-                              });
-                              setDeleteModalOpen(true);
-                            }}
-                            className="px-3 py-1.5 text-xs rounded-lg border border-white/10 text-red-300/80 bg-red-500/10"
-                            title="Excluir"
-                          >
-                            Excluir
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                    ) : null}
                     {isEditing && editError ? (
                       <div className="mt-2 rounded-lg p-2 text-xs bg-red-500/10 border border-red-500/30 text-red-300">
                         {editError}

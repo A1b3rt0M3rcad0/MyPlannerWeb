@@ -6,6 +6,7 @@ import { userTransactionsApi } from "../../services/api/transactions";
 import { userAccountsApi } from "../../services/api/accounts";
 import { userCategoriesApi } from "../../services/api/categories";
 import ConfirmationModal from "../../components/ConfirmationModal";
+import SmartList from "../../components/SmartList";
 import {
   Search,
   Plus,
@@ -48,7 +49,7 @@ export default function TransactionsPage() {
   const [touched, setTouched] = useState({});
   const amountInputRef = useRef(null);
 
-  const [categoryOptions, setCategoryOptions] = useState([]); // [{id,label}]
+  const [categoryOptions, setCategoryOptions] = useState([]); // [{id,label,color}]
   const [accountOptions, setAccountOptions] = useState([]); // [{id, label}]
 
   const [editingId, setEditingId] = useState(null);
@@ -82,7 +83,7 @@ export default function TransactionsPage() {
     const map = {};
     for (const c of categoryOptions) {
       if (c && Number.isFinite(c.id)) {
-        map[c.id] = c.label;
+        map[c.id] = { label: c.label, color: c.color };
       }
     }
     return map;
@@ -151,6 +152,7 @@ export default function TransactionsPage() {
           .map((c) => ({
             id: Number(c.id ?? c.category_id),
             label: (c.name || c.category_name || "Categoria").toString(),
+            color: c.color || "#8b5cf6",
           }))
           .filter((o) => Number.isFinite(o.id));
         setCategoryOptions(options.slice(0, 50));
@@ -210,19 +212,24 @@ export default function TransactionsPage() {
       setCreateError("Selecione a data.");
       return;
     }
+    if (!form.accountId) {
+      setCreateError("Selecione uma conta.");
+      return;
+    }
+    if (!form.categoryId) {
+      setCreateError("Selecione uma categoria.");
+      return;
+    }
     try {
       setCreateLoading(true);
       setCreateError(null);
       const payload = {
         amount: Number(amountNumber),
-        date: form.date,
-        type: form.type,
-        category_id: form.categoryId ? Number(form.categoryId) : undefined,
-        description:
-          typeof form.description === "string" ? form.description.trim() : "",
-        wallet: form.wallet || undefined,
-        account_id: form.accountId ? Number(form.accountId) : undefined,
         planner_id: selectedPlanner?.id,
+        account_id: Number(form.accountId),
+        category_id: Number(form.categoryId),
+        is_income: form.type === "income",
+        ...(form.description ? { description: form.description.trim() } : {}),
       };
       await userTransactionsApi.createTransaction(payload);
       setShowCreate(false);
@@ -233,6 +240,8 @@ export default function TransactionsPage() {
         category: "",
         description: "",
         wallet: "",
+        accountId: "",
+        categoryId: "",
       });
       setTouched({});
       await load({ page: 1, search });
@@ -253,12 +262,8 @@ export default function TransactionsPage() {
       setEditError(null);
       const payload = {
         amount: Number(editForm.amount),
-        date: editForm.date,
-        type: editForm.type,
-        category: editForm.category || undefined,
-        description: editForm.description || undefined,
-        wallet: editForm.wallet || undefined,
-        planner_id: selectedPlanner?.id,
+        is_income: editForm.type === "income",
+        ...(editForm.description ? { description: editForm.description } : {}),
       };
       await userTransactionsApi.updateTransaction(id, payload);
       setEditingId(null);
@@ -487,7 +492,11 @@ export default function TransactionsPage() {
                 <button
                   type="submit"
                   disabled={
-                    createLoading || !isValidAmount(form.amount) || !form.date
+                    createLoading ||
+                    !isValidAmount(form.amount) ||
+                    !form.date ||
+                    !form.accountId ||
+                    !form.categoryId
                   }
                   className="px-4 py-2 rounded-lg text-sm font-medium text-secondary-900 disabled:opacity-50"
                   style={accentBg}
@@ -538,13 +547,17 @@ export default function TransactionsPage() {
                 const dateStr = date
                   ? new Date(date).toLocaleDateString("pt-BR")
                   : "";
-                const category =
+                const categoryName =
                   t.category ??
                   t.transaction_category ??
                   (Number.isFinite(Number(t.category_id))
-                    ? categoriesById[Number(t.category_id)]
+                    ? categoriesById[Number(t.category_id)]?.label
                     : undefined) ??
                   "—";
+                const categoryColor =
+                  (Number.isFinite(Number(t.category_id))
+                    ? categoriesById[Number(t.category_id)]?.color
+                    : undefined) ?? (isIncome ? "#10b981" : "#ef4444");
                 const description =
                   t.description ?? t.transaction_description ?? "";
                 const wallet = t.wallet ?? t.transaction_wallet ?? "";
@@ -675,84 +688,81 @@ export default function TransactionsPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                              isIncome
-                                ? "bg-green-500/20 border border-green-500/30"
-                                : "bg-red-500/20 border border-red-500/30"
-                            }`}
-                          >
-                            {isIncome ? (
-                              <TrendingUp className="w-5 h-5 text-green-400" />
+                      <SmartList
+                        items={[
+                          {
+                            id,
+                            title: `${categoryName}${
+                              description ? ` • ${description}` : ""
+                            }`,
+                            subtitle: `${dateStr}${
+                              wallet ? ` • ${wallet}` : ""
+                            }`,
+                            leftColor: categoryColor,
+                            leftIcon: isIncome ? (
+                              <TrendingUp
+                                className="w-5 h-5"
+                                style={{ color: categoryColor }}
+                              />
                             ) : (
-                              <TrendingDown className="w-5 h-5 text-red-400" />
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-white font-medium truncate">
-                              {category} {description ? `• ${description}` : ""}
-                            </p>
-                            <p className="text-xs text-gray-400 truncate">
-                              {dateStr}
-                              {wallet ? ` • ${wallet}` : ""}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span
-                            className={
-                              isIncome
-                                ? "text-sm font-semibold text-green-400"
-                                : "text-sm font-semibold text-red-400"
-                            }
-                          >
-                            {isIncome ? "+" : "-"}
-                            {amount}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingId(id);
-                              setEditForm({
-                                amount: String(
-                                  Math.abs(
-                                    t.amount ?? t.transaction_amount ?? 0
-                                  )
+                              <TrendingDown
+                                className="w-5 h-5"
+                                style={{ color: categoryColor }}
+                              />
+                            ),
+                            rightValue: `${isIncome ? "+" : "-"}${amount}`,
+                            actions: [
+                              {
+                                key: "edit",
+                                title: "Editar",
+                                icon: (
+                                  <Pencil className="w-4 h-4 text-gray-300" />
                                 ),
-                                date: (
-                                  t.date ??
-                                  t.transaction_date ??
-                                  new Date().toISOString().slice(0, 10)
-                                ).slice(0, 10),
-                                type: isIncome ? "income" : "expense",
-                                category,
-                                description,
-                                wallet,
-                              });
-                            }}
-                            className="px-3 py-1.5 text-xs rounded-lg border border-white/10 text-gray-300 bg-white/5"
-                            title="Editar"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDeleteTarget({
-                                id,
-                                label: description || category || "Transação",
-                              });
-                              setDeleteModalOpen(true);
-                            }}
-                            className="px-3 py-1.5 text-xs rounded-lg border border-white/10 text-red-300/80 bg-red-500/10"
-                            title="Excluir"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
+                                onClick: () => {
+                                  setEditingId(id);
+                                  setEditForm({
+                                    amount: String(
+                                      Math.abs(
+                                        t.amount ?? t.transaction_amount ?? 0
+                                      )
+                                    ),
+                                    date: (
+                                      t.date ??
+                                      t.transaction_date ??
+                                      new Date().toISOString().slice(0, 10)
+                                    ).slice(0, 10),
+                                    type: isIncome ? "income" : "expense",
+                                    category: categoryName,
+                                    description,
+                                    wallet,
+                                  });
+                                },
+                                className:
+                                  "p-2 rounded-lg border border-white/10 text-gray-300 bg-white/5 hover:bg-white/10",
+                              },
+                              {
+                                key: "delete",
+                                title: "Excluir",
+                                icon: (
+                                  <Trash2 className="w-4 h-4 text-red-300" />
+                                ),
+                                onClick: () => {
+                                  setDeleteTarget({
+                                    id,
+                                    label:
+                                      description ||
+                                      categoryName ||
+                                      "Transação",
+                                  });
+                                  setDeleteModalOpen(true);
+                                },
+                                className:
+                                  "p-2 rounded-lg border border-white/10 bg-red-500/10 hover:bg-red-500/20",
+                              },
+                            ],
+                          },
+                        ]}
+                      />
                     )}
                   </div>
                 );

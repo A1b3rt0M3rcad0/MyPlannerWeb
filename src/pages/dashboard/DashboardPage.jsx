@@ -13,6 +13,8 @@ import {
   Target,
   AlertCircle,
   Users,
+  Tag,
+  FolderOpen,
 } from "lucide-react";
 import { dashboardAPI } from "../../services/api/dashboard";
 
@@ -325,25 +327,36 @@ export default function DashboardPage() {
                   Sem dados neste período.
                 </p>
               ) : null}
-              {stats.expense_by_category.map((c) => (
-                <div
-                  key={c.category_id}
-                  className="flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-4 h-4 rounded shadow-sm"
-                      style={{ backgroundColor: colors.primary }}
-                    ></div>
-                    <span className="text-sm text-gray-300">
-                      {c.category_name}
+              {stats.expense_by_category.map((c) => {
+                const categoryColor = c.category_color || colors.primary;
+                return (
+                  <div
+                    key={c.category_id}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center border"
+                        style={{
+                          backgroundColor: `${categoryColor}20`,
+                          borderColor: `${categoryColor}50`,
+                        }}
+                      >
+                        <Tag
+                          className="w-5 h-5"
+                          style={{ color: categoryColor }}
+                        />
+                      </div>
+                      <span className="text-sm text-gray-300">
+                        {c.category_name}
+                      </span>
+                    </div>
+                    <span className="text-sm font-semibold text-white">
+                      {currency.format(c.total_expenses || 0)}
                     </span>
                   </div>
-                  <span className="text-sm font-semibold text-white">
-                    {currency.format(c.total_expenses || 0)}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
               {loading ? (
                 <div className="h-4 w-28 bg-white/10 rounded animate-pulse" />
               ) : null}
@@ -411,7 +424,8 @@ export default function DashboardPage() {
             ) : null}
             {stats.recent_transactions.map((t) => {
               const isIncome = !!t.is_income;
-              const color = isIncome ? "green" : "red";
+              const categoryColor =
+                t.category_color || (isIncome ? "#10b981" : "#ef4444");
               const amount = currency.format(
                 Math.abs(t.transaction_amount || 0)
               );
@@ -432,12 +446,22 @@ export default function DashboardPage() {
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className={`w-10 h-10 bg-${color}-500/20 border border-${color}-500/30 rounded-full flex items-center justify-center`}
+                      className="w-10 h-10 rounded-xl flex items-center justify-center border"
+                      style={{
+                        backgroundColor: `${categoryColor}20`,
+                        borderColor: `${categoryColor}50`,
+                      }}
                     >
                       {isIncome ? (
-                        <TrendingUp className={`w-5 h-5 text-${color}-400`} />
+                        <TrendingUp
+                          className="w-5 h-5"
+                          style={{ color: categoryColor }}
+                        />
                       ) : (
-                        <TrendingDown className={`w-5 h-5 text-${color}-400`} />
+                        <TrendingDown
+                          className="w-5 h-5"
+                          style={{ color: categoryColor }}
+                        />
                       )}
                     </div>
                     <div>
@@ -449,7 +473,12 @@ export default function DashboardPage() {
                       <p className="text-xs text-gray-400">{dateStr}</p>
                     </div>
                   </div>
-                  <span className={`text-sm font-semibold text-${color}-400`}>
+                  <span
+                    className="text-sm font-semibold"
+                    style={{
+                      color: isIncome ? "#10b981" : "#ef4444",
+                    }}
+                  >
                     {sign}
                     {amount}
                   </span>
