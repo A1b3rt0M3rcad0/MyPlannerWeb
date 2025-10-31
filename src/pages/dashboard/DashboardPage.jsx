@@ -117,7 +117,7 @@ export default function DashboardPage() {
   // Buscar estatísticas do dashboard do usuário
   useEffect(() => {
     const fetchStats = async () => {
-      if (!selectedPlanner) return;
+      if (!selectedPlanner?.id) return;
       try {
         setLoading(true);
         setError(null);
@@ -126,6 +126,10 @@ export default function DashboardPage() {
           initialDate,
           finalDate,
         });
+
+        // Pequeno delay para melhorar a percepção da animação
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
         setStats({
           total_balance: data?.total_balance ?? 0,
           total_income: data?.total_income ?? 0,
@@ -156,7 +160,11 @@ export default function DashboardPage() {
       pageTitle={selectedPlanner ? selectedPlanner.name : "Dashboard"}
       showPlannerSelector={true}
     >
-      <div className="space-y-6 animate-dashboard-enter">
+      <div
+        className={`space-y-6 transition-opacity duration-300 ${
+          loading ? "opacity-50" : "opacity-100"
+        }`}
+      >
         {/* Filtro de período (mês) - controles mais atrativos */}
         <div className="flex items-center justify-end gap-2">
           <button
@@ -233,106 +241,289 @@ export default function DashboardPage() {
         )}
 
         {/* Cards de Resumo */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 dashboard-stagger">
-          <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p
-                  className="text-sm font-medium"
-                  style={{ color: colors.primary }}
+        <div
+          className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ${
+            !loading ? "dashboard-stagger" : ""
+          }`}
+        >
+          {loading ? (
+            // Skeleton loading para os 4 cards
+            <>
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg animate-pulse"
                 >
-                  Saldo Total
-                </p>
-                <p className="text-2xl font-bold text-white">
-                  {currency.format(stats.total_balance || 0)}
-                </p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="h-4 w-24 bg-white/10 rounded mb-3"></div>
+                      <div className="h-8 w-32 bg-white/10 rounded"></div>
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-white/10"></div>
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : (
+            <>
+              <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg transition-all duration-300">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p
+                      className="text-sm font-medium"
+                      style={{ color: colors.primary }}
+                    >
+                      Saldo Total
+                    </p>
+                    <p className="text-2xl font-bold text-white">
+                      {currency.format(stats.total_balance || 0)}
+                    </p>
+                  </div>
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: colors.primary }}
+                  >
+                    <DollarSign className="w-6 h-6 text-white" />
+                  </div>
+                </div>
               </div>
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center"
-                style={{ backgroundColor: colors.primary }}
-              >
-                <DollarSign className="w-6 h-6 text-white" />
-              </div>
-            </div>
-            {loading ? (
-              <div className="mt-4 h-4 w-24 bg-white/10 rounded animate-pulse" />
-            ) : null}
-          </div>
 
-          <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-green-400">Receitas</p>
-                <p className="text-2xl font-bold text-white">
-                  {currency.format(stats.total_income || 0)}
-                </p>
+              <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg transition-all duration-300">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-green-400">Receitas</p>
+                    <p className="text-2xl font-bold text-white">
+                      {currency.format(stats.total_income || 0)}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-green-500">
+                    <TrendingUp className="w-6 h-6 text-white" />
+                  </div>
+                </div>
               </div>
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-green-500">
-                <TrendingUp className="w-6 h-6 text-white" />
-              </div>
-            </div>
-            {loading ? (
-              <div className="mt-4 h-4 w-24 bg-white/10 rounded animate-pulse" />
-            ) : null}
-          </div>
 
-          <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-red-400">Despesas</p>
-                <p className="text-2xl font-bold text-white">
-                  {currency.format(stats.total_expenses || 0)}
-                </p>
+              <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg transition-all duration-300">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-red-400">Despesas</p>
+                    <p className="text-2xl font-bold text-white">
+                      {currency.format(stats.total_expenses || 0)}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-red-500">
+                    <TrendingDown className="w-6 h-6 text-white" />
+                  </div>
+                </div>
               </div>
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-red-500">
-                <TrendingDown className="w-6 h-6 text-white" />
-              </div>
-            </div>
-            {loading ? (
-              <div className="mt-4 h-4 w-24 bg-white/10 rounded animate-pulse" />
-            ) : null}
-          </div>
 
-          <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-blue-400">Metas</p>
-                <p className="text-2xl font-bold text-white">
-                  {currency.format(stats.total_goals || 0)}
-                </p>
+              <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg transition-all duration-300">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-blue-400">Metas</p>
+                    <p className="text-2xl font-bold text-white">
+                      {currency.format(stats.total_goals || 0)}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-blue-500">
+                    <BarChart3 className="w-6 h-6 text-white" />
+                  </div>
+                </div>
               </div>
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-blue-500">
-                <BarChart3 className="w-6 h-6 text-white" />
-              </div>
-            </div>
-            {loading ? (
-              <div className="mt-4 h-4 w-24 bg-white/10 rounded animate-pulse" />
-            ) : null}
-          </div>
+            </>
+          )}
         </div>
 
         {/* Gráficos e Análises */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 dashboard-stagger">
+        <div
+          className={`grid grid-cols-1 lg:grid-cols-2 gap-6 ${
+            !loading ? "dashboard-stagger" : ""
+          }`}
+        >
           {/* Gastos por Categoria */}
-          <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg">
+          {loading ? (
+            <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg animate-pulse">
+              <div className="h-6 w-40 bg-white/10 rounded mb-6"></div>
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-white/10"></div>
+                      <div className="h-4 w-24 bg-white/10 rounded"></div>
+                    </div>
+                    <div className="h-4 w-20 bg-white/10 rounded"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg transition-all duration-300">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-white">
+                  Gastos por Categoria
+                </h3>
+                <PieChart className="w-5 h-5 text-gray-400" />
+              </div>
+              <div className="space-y-4">
+                {stats.expense_by_category.length === 0 && !loading ? (
+                  <p className="text-sm text-gray-400">
+                    Sem dados neste período.
+                  </p>
+                ) : null}
+                {stats.expense_by_category.map((c) => {
+                  const categoryColor = c.category_color || colors.primary;
+                  return (
+                    <div
+                      key={c.category_id}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center border"
+                          style={{
+                            backgroundColor: `${categoryColor}20`,
+                            borderColor: `${categoryColor}50`,
+                          }}
+                        >
+                          <Tag
+                            className="w-5 h-5"
+                            style={{ color: categoryColor }}
+                          />
+                        </div>
+                        <span className="text-sm text-gray-300">
+                          {c.category_name}
+                        </span>
+                      </div>
+                      <span className="text-sm font-semibold text-white">
+                        {currency.format(c.total_expenses || 0)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Metas Financeiras */}
+          {loading ? (
+            <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg animate-pulse">
+              <div className="h-6 w-40 bg-white/10 rounded mb-6"></div>
+              <div className="space-y-4">
+                {[1, 2].map((i) => (
+                  <div key={i}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="h-4 w-32 bg-white/10 rounded"></div>
+                      <div className="h-4 w-12 bg-white/10 rounded"></div>
+                    </div>
+                    <div className="w-full h-2 bg-white/10 rounded-full"></div>
+                    <div className="h-3 w-48 bg-white/10 rounded mt-2"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg transition-all duration-300">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-white">
+                  Metas Financeiras
+                </h3>
+                <Target className="w-5 h-5 text-gray-400" />
+              </div>
+              <div className="space-y-4">
+                {stats.goal_progress.length === 0 && !loading ? (
+                  <p className="text-sm text-gray-400">
+                    Nenhuma meta encontrada.
+                  </p>
+                ) : null}
+                {stats.goal_progress.map((g) => (
+                  <div key={g.goal_id}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-gray-300">
+                        {g.goal_name}
+                      </span>
+                      <span className="text-sm font-semibold text-white">
+                        {Math.round(g.progress_percentage || 0)}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-600 rounded-full h-2">
+                      <div
+                        className="h-2 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            Math.max(0, g.progress_percentage || 0)
+                          )}%`,
+                          backgroundColor: colors.primary,
+                        }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {currency.format(g.current_amount || 0)} de{" "}
+                      {currency.format(g.target_amount || 0)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Transações Recentes */}
+        {loading ? (
+          <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg animate-pulse">
+            <div className="h-6 w-48 bg-white/10 rounded mb-6"></div>
+            <div className="space-y-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between py-3 border-b border-white/10"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-white/10"></div>
+                    <div>
+                      <div className="h-4 w-32 bg-white/10 rounded mb-2"></div>
+                      <div className="h-3 w-24 bg-white/10 rounded"></div>
+                    </div>
+                  </div>
+                  <div className="h-4 w-20 bg-white/10 rounded"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg dashboard-stagger transition-all duration-300">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-white">
-                Gastos por Categoria
+                Transações Recentes
               </h3>
-              <PieChart className="w-5 h-5 text-gray-400" />
+              <CreditCard className="w-5 h-5 text-gray-400" />
             </div>
             <div className="space-y-4">
-              {stats.expense_by_category.length === 0 && !loading ? (
+              {stats.recent_transactions.length === 0 && !loading ? (
                 <p className="text-sm text-gray-400">
-                  Sem dados neste período.
+                  Sem transações recentes.
                 </p>
               ) : null}
-              {stats.expense_by_category.map((c) => {
-                const categoryColor = c.category_color || colors.primary;
+              {stats.recent_transactions.map((t) => {
+                const isIncome = !!t.is_income;
+                const categoryColor =
+                  t.category_color || (isIncome ? "#10b981" : "#ef4444");
+                const amount = currency.format(
+                  Math.abs(t.transaction_amount || 0)
+                );
+                const sign = isIncome ? "+" : "-";
+                const date = t.transaction_date
+                  ? new Date(t.transaction_date)
+                  : null;
+                const dateStr = date
+                  ? date.toLocaleString("pt-BR", {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    })
+                  : "";
                 return (
                   <div
-                    key={c.category_id}
-                    className="flex items-center justify-between"
+                    key={t.transaction_id}
+                    className="flex items-center justify-between py-3 border-b border-white/10"
                   >
                     <div className="flex items-center gap-3">
                       <div
@@ -342,154 +533,42 @@ export default function DashboardPage() {
                           borderColor: `${categoryColor}50`,
                         }}
                       >
-                        <Tag
-                          className="w-5 h-5"
-                          style={{ color: categoryColor }}
-                        />
+                        {isIncome ? (
+                          <TrendingUp
+                            className="w-5 h-5"
+                            style={{ color: categoryColor }}
+                          />
+                        ) : (
+                          <TrendingDown
+                            className="w-5 h-5"
+                            style={{ color: categoryColor }}
+                          />
+                        )}
                       </div>
-                      <span className="text-sm text-gray-300">
-                        {c.category_name}
-                      </span>
+                      <div>
+                        <p className="text-sm font-semibold text-white">
+                          {t.transaction_category ||
+                            t.transaction_description ||
+                            "Transação"}
+                        </p>
+                        <p className="text-xs text-gray-400">{dateStr}</p>
+                      </div>
                     </div>
-                    <span className="text-sm font-semibold text-white">
-                      {currency.format(c.total_expenses || 0)}
+                    <span
+                      className="text-sm font-semibold"
+                      style={{
+                        color: isIncome ? "#10b981" : "#ef4444",
+                      }}
+                    >
+                      {sign}
+                      {amount}
                     </span>
                   </div>
                 );
               })}
-              {loading ? (
-                <div className="h-4 w-28 bg-white/10 rounded animate-pulse" />
-              ) : null}
             </div>
           </div>
-
-          {/* Metas Financeiras */}
-          <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-white">
-                Metas Financeiras
-              </h3>
-              <Target className="w-5 h-5 text-gray-400" />
-            </div>
-            <div className="space-y-4">
-              {stats.goal_progress.length === 0 && !loading ? (
-                <p className="text-sm text-gray-400">
-                  Nenhuma meta encontrada.
-                </p>
-              ) : null}
-              {stats.goal_progress.map((g) => (
-                <div key={g.goal_id}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-300">{g.goal_name}</span>
-                    <span className="text-sm font-semibold text-white">
-                      {Math.round(g.progress_percentage || 0)}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-600 rounded-full h-2">
-                    <div
-                      className="h-2 rounded-full transition-all duration-300"
-                      style={{
-                        width: `${Math.min(
-                          100,
-                          Math.max(0, g.progress_percentage || 0)
-                        )}%`,
-                        backgroundColor: colors.primary,
-                      }}
-                    ></div>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {currency.format(g.current_amount || 0)} de{" "}
-                    {currency.format(g.target_amount || 0)}
-                  </p>
-                </div>
-              ))}
-              {loading ? (
-                <div className="h-4 w-28 bg-white/10 rounded animate-pulse" />
-              ) : null}
-            </div>
-          </div>
-        </div>
-
-        {/* Transações Recentes */}
-        <div className="bg-secondary-800/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-lg dashboard-stagger">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-white">
-              Transações Recentes
-            </h3>
-            <CreditCard className="w-5 h-5 text-gray-400" />
-          </div>
-          <div className="space-y-4">
-            {stats.recent_transactions.length === 0 && !loading ? (
-              <p className="text-sm text-gray-400">Sem transações recentes.</p>
-            ) : null}
-            {stats.recent_transactions.map((t) => {
-              const isIncome = !!t.is_income;
-              const categoryColor =
-                t.category_color || (isIncome ? "#10b981" : "#ef4444");
-              const amount = currency.format(
-                Math.abs(t.transaction_amount || 0)
-              );
-              const sign = isIncome ? "+" : "-";
-              const date = t.transaction_date
-                ? new Date(t.transaction_date)
-                : null;
-              const dateStr = date
-                ? date.toLocaleString("pt-BR", {
-                    dateStyle: "short",
-                    timeStyle: "short",
-                  })
-                : "";
-              return (
-                <div
-                  key={t.transaction_id}
-                  className="flex items-center justify-between py-3 border-b border-white/10"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center border"
-                      style={{
-                        backgroundColor: `${categoryColor}20`,
-                        borderColor: `${categoryColor}50`,
-                      }}
-                    >
-                      {isIncome ? (
-                        <TrendingUp
-                          className="w-5 h-5"
-                          style={{ color: categoryColor }}
-                        />
-                      ) : (
-                        <TrendingDown
-                          className="w-5 h-5"
-                          style={{ color: categoryColor }}
-                        />
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-white">
-                        {t.transaction_category ||
-                          t.transaction_description ||
-                          "Transação"}
-                      </p>
-                      <p className="text-xs text-gray-400">{dateStr}</p>
-                    </div>
-                  </div>
-                  <span
-                    className="text-sm font-semibold"
-                    style={{
-                      color: isIncome ? "#10b981" : "#ef4444",
-                    }}
-                  >
-                    {sign}
-                    {amount}
-                  </span>
-                </div>
-              );
-            })}
-            {loading ? (
-              <div className="h-4 w-28 bg-white/10 rounded animate-pulse" />
-            ) : null}
-          </div>
-        </div>
+        )}
       </div>
     </BasePage>
   );
