@@ -17,12 +17,19 @@ export default function AdminLogin() {
   useEffect(() => {
     if (!authLoading && isAuthenticated && user) {
       // Verifica se é admin
-      const isAdmin = user.role === "admin" || user.is_super_admin || user.user_type === "admin";
+      const isAdmin =
+        user.role === "admin" ||
+        user.is_super_admin ||
+        user.user_type === "admin";
       if (isAdmin) {
-        console.log("✅ Usuário já autenticado como admin, redirecionando para dashboard");
+        console.log(
+          "✅ Usuário já autenticado como admin, redirecionando para dashboard"
+        );
         navigate("/admin", { replace: true });
       } else {
-        console.log("⚠️ Usuário autenticado mas não é admin, redirecionando para dashboard de usuário");
+        console.log(
+          "⚠️ Usuário autenticado mas não é admin, redirecionando para dashboard de usuário"
+        );
         navigate("/dashboard", { replace: true });
       }
     }
@@ -61,6 +68,7 @@ export default function AdminLogin() {
         const userInfo = {
           id: tokenPayload.id,
           email: tokenPayload.email,
+          name: tokenPayload.name || email.split("@")[0], // Nome completo
           first_name: tokenPayload.name?.split(" ")[0] || email.split("@")[0],
           last_name: tokenPayload.name?.split(" ").slice(1).join(" ") || "",
           role: tokenPayload.role,

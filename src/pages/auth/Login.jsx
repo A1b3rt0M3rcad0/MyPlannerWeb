@@ -29,7 +29,9 @@ const Login = () => {
         );
         navigate("/admin", { replace: true });
       } else {
-        console.log("✅ Usuário já autenticado, redirecionando para seleção de planner");
+        console.log(
+          "✅ Usuário já autenticado, redirecionando para seleção de planner"
+        );
         navigate("/planner/selection", { replace: true });
       }
     }
@@ -68,6 +70,7 @@ const Login = () => {
         const userInfo = {
           id: tokenPayload.id,
           email: tokenPayload.email,
+          name: tokenPayload.name || email.split("@")[0], // Nome completo
           first_name: tokenPayload.name?.split(" ")[0] || email.split("@")[0],
           last_name: tokenPayload.name?.split(" ").slice(1).join(" ") || "",
           role: tokenPayload.role,
@@ -110,7 +113,7 @@ const Login = () => {
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary-500 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary-600 rounded-full blur-3xl"></div>
       </div>
-      
+
       <div className="w-full max-w-md relative z-10">
         {/* Card de Login */}
         <div className="bg-secondary-800/50 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/10 p-8">
