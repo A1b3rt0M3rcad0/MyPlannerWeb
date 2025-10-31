@@ -18,11 +18,18 @@ import {
   Trash2,
   MoreVertical,
   LogOut,
+  Crown,
+  UserCheck,
 } from "lucide-react";
 
 export default function PlannerSelectionPage() {
   const navigate = useNavigate();
-  const { planners, selectPlanner, loading, updatePlanners } = usePlanner();
+  const {
+    planners = [],
+    selectPlanner,
+    loading,
+    updatePlanners,
+  } = usePlanner();
   const { logout } = useAuth();
   const { confirmation, showConfirmation, hideConfirmation } =
     useConfirmation();
@@ -148,7 +155,7 @@ export default function PlannerSelectionPage() {
     });
   };
 
-  const filteredPlanners = planners.filter(
+  const filteredPlanners = (planners || []).filter(
     (planner) =>
       planner.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       planner.description.toLowerCase().includes(searchTerm.toLowerCase())
@@ -301,7 +308,7 @@ export default function PlannerSelectionPage() {
                   </div>
                 ))}
               </div>
-            ) : filteredPlanners.length === 0 ? (
+            ) : !filteredPlanners || filteredPlanners.length === 0 ? (
               <div className="text-center py-16">
                 <div className="w-20 h-20 bg-gradient-to-br from-primary-400 to-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
                   <FolderOpen className="w-10 h-10 text-secondary-900" />
@@ -342,10 +349,31 @@ export default function PlannerSelectionPage() {
                         >
                           {getPlannerIcon(planner.color)}
                         </div>
-                        <div>
-                          <h3 className="font-bold text-white group-hover:text-primary-400 transition-colors">
-                            {planner.name || "Sem nome"}
-                          </h3>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-bold text-white group-hover:text-primary-400 transition-colors">
+                              {planner.name || "Sem nome"}
+                            </h3>
+                            {/* Badge com ícone indicando se é owner ou member */}
+                            {planner.role && (
+                              <span
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-lg ${
+                                  planner.role === "owner"
+                                    ? "bg-primary-500/20 text-primary-400 border border-primary-500/30"
+                                    : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                                }`}
+                                title={
+                                  planner.role === "owner" ? "Dono" : "Membro"
+                                }
+                              >
+                                {planner.role === "owner" ? (
+                                  <Crown className="w-3 h-3" />
+                                ) : (
+                                  <UserCheck className="w-3 h-3" />
+                                )}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-sm text-gray-400">
                             {getPlannerTypeLabel(planner.color)}
                           </p>
@@ -396,7 +424,7 @@ export default function PlannerSelectionPage() {
             )}
 
             {/* Botão criar novo planner */}
-            {filteredPlanners.length > 0 && (
+            {filteredPlanners && filteredPlanners.length > 0 && (
               <div className="text-center">
                 <button
                   onClick={handleCreatePlanner}
