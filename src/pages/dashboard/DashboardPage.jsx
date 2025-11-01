@@ -17,6 +17,7 @@ import {
   FolderOpen,
 } from "lucide-react";
 import { dashboardAPI } from "../../services/api/dashboard";
+import NoActivePlanPage from "../NoActivePlan";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ export default function DashboardPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [hasActivePlan, setHasActivePlan] = useState(true);
   const [stats, setStats] = useState({
     total_balance: 0,
     total_income: 0,
@@ -146,6 +148,11 @@ export default function DashboardPage() {
             : [],
         });
       } catch (e) {
+        // Verificar se o erro é de assinatura necessária (403)
+        if (e?.response?.status === 403 || e?.response?.data?.error === 'Subscription required') {
+          setHasActivePlan(false);
+          return;
+        }
         setError("Não foi possível carregar os dados do dashboard.");
       } finally {
         setLoading(false);
@@ -154,6 +161,11 @@ export default function DashboardPage() {
 
     fetchStats();
   }, [selectedPlanner, initialDate, finalDate]);
+
+  // Se não tem plano ativo, mostrar página de aviso
+  if (!hasActivePlan) {
+    return <NoActivePlanPage />;
+  }
 
   return (
     <BasePage
